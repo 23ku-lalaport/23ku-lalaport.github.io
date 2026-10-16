@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>雅緻衣坊｜百貨專櫃</title>
+<meta name="description" content="百貨公司專櫃服飾，為成熟女性挑選舒適、得體、耐穿的日常與正式穿搭。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f7f3ec; --paper:#fffdf9; --ink:#2b2622; --muted:#6f655c;
+    --navy:#2f3a4f; --camel:#a8794a; --line:#e3dacd;
+    --serif:"Noto Serif TC",serif; --sans:"Noto Sans TC",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:18px;line-height:1.8}
+  img{max-width:100%;display:block}
+  a{color:inherit}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+
+  /* header */
+  header{position:sticky;top:0;z-index:10;background:rgba(247,243,236,.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+  .bar{display:flex;align-items:center;justify-content:space-between;height:72px}
+  .logo{font-family:var(--serif);font-size:24px;font-weight:700;letter-spacing:.12em;text-decoration:none}
+  .logo small{display:block;font-family:var(--sans);font-size:11px;font-weight:400;letter-spacing:.3em;color:var(--muted);line-height:1}
+  nav a{text-decoration:none;margin-left:28px;font-size:17px;color:var(--muted)}
+  nav a:hover{color:var(--ink)}
+
+  /* hero */
+  .hero{display:grid;grid-template-columns:1.1fr 1fr;gap:56px;align-items:center;padding:72px 0 88px}
+  .eyebrow{font-size:14px;letter-spacing:.3em;color:var(--camel);margin-bottom:16px}
+  h1{font-family:var(--serif);font-size:clamp(34px,5vw,54px);line-height:1.35;font-weight:600;margin-bottom:24px}
+  .hero p{color:var(--muted);font-size:19px;max-width:30em;margin-bottom:36px}
+  .btn{display:inline-block;background:var(--navy);color:#fff;text-decoration:none;padding:14px 34px;border-radius:2px;letter-spacing:.1em;font-size:17px}
+  .btn:hover{background:#222b3b}
+  .hero-art{aspect-ratio:4/5;background:linear-gradient(160deg,#e9dfd0,#d8c6ad);border-radius:2px;position:relative;overflow:hidden}
+  .hero-art img{width:100%;height:100%;object-fit:cover}
+  .hero-art svg{position:absolute;inset:12% 18%}
+
+  /* sections */
+  section{padding:88px 0}
+  .head{text-align:center;margin-bottom:44px}
+  .head h2{font-family:var(--serif);font-size:34px;font-weight:600;letter-spacing:.08em}
+  .head p{color:var(--muted)}
+  .head h2::after{content:"";display:block;width:40px;height:2px;background:var(--camel);margin:14px auto 12px}
+
+  .filters{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-bottom:40px}
+  .filters button{font:inherit;font-size:16px;background:transparent;border:1px solid var(--line);color:var(--muted);padding:8px 22px;border-radius:999px;cursor:pointer}
+  .filters button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:32px 24px}
+  .card{background:var(--paper);border:1px solid var(--line)}
+  .pic{aspect-ratio:3/4;position:relative;overflow:hidden}
+  .pic img{width:100%;height:100%;object-fit:cover;transition:transform .5s}
+  .card:hover .pic img{transform:scale(1.04)}
+  .pic svg{position:absolute;inset:14% 20%}
+  .tag{position:absolute;top:12px;left:12px;background:var(--camel);color:#fff;font-size:13px;padding:2px 10px;letter-spacing:.1em}
+  .info{padding:16px 18px 20px}
+  .info h3{font-family:var(--serif);font-size:19px;font-weight:600;line-height:1.5}
+  .meta{color:var(--muted);font-size:15px;margin:2px 0 8px}
+  .price{font-size:19px;color:var(--navy);font-weight:500}
+
+  /* about */
+  #about{background:var(--paper);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .about{display:grid;grid-template-columns:1fr 1.2fr;gap:64px;align-items:center}
+  .about-art{aspect-ratio:1;background:linear-gradient(200deg,#dfe3ea,#c3cad6);position:relative;overflow:hidden}
+  .about-art img{width:100%;height:100%;object-fit:cover}
+  .about h2{font-family:var(--serif);font-size:32px;font-weight:600;margin-bottom:20px;line-height:1.5}
+  .about p{color:var(--muted);margin-bottom:18px}
+  .points{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:32px;border-top:1px solid var(--line);padding-top:28px}
+  .points b{display:block;font-family:var(--serif);font-size:19px;color:var(--navy);font-weight:600}
+  .points span{font-size:15px;color:var(--muted)}
+
+  footer{padding:48px 0;text-align:center;color:var(--muted);font-size:15px}
+  footer .logo{display:inline-block;margin-bottom:8px}
+
+  @media (max-width:800px){
+    body{font-size:17px}
+    nav a{margin-left:16px;font-size:15px}
+    .hero,.about{grid-template-columns:1fr;gap:36px}
+    .hero{padding:44px 0 60px}
+    section{padding:64px 0}
+    .grid{grid-template-columns:repeat(2,1fr);gap:20px 14px}
+    .info{padding:12px 12px 14px}
+    .info h3{font-size:16px}
+    .points{grid-template-columns:1fr;gap:14px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap bar">
+    <a class="logo" href="#top">雅緻衣坊<small>ELEGANT WEAR</small></a>
+    <nav><a href="#products">商品</a><a href="#about">關於我們</a></nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap hero">
+    <div>
+      <div class="eyebrow">2026 秋冬系列</div>
+      <h1>穿得舒服，<br>也穿得有份量。</h1>
+      <p>為成熟女性挑選的百貨專櫃服飾。好的布料、合身的剪裁，從上班、聚餐到出遊，一件就能從容出門。</p>
+      <a class="btn" href="#products">看本季商品</a>
+    </div>
+    <div class="hero-art">
+      <!-- 換成店面或模特兒照片：<img src="images/hero.jpg" alt="本季主打穿搭"> -->
+      <svg viewBox="0 0 100 130" fill="none" stroke="#8a6b4a" stroke-width="1.2"><path d="M35 8q15 8 30 0l14 10-6 18-8-4v88H35V32l-8 4-6-18z"/><path d="M50 12v108M42 40h16"/></svg>
+    </div>
+  </div>
+
+  <section id="products">
+    <div class="wrap">
+      <div class="head"><h2>本季商品</h2><p>實際款式與尺寸以專櫃現場為準</p></div>
+      <div class="filters" id="filters"></div>
+      <div class="grid" id="grid"></div>
+    </div>
+  </section>
+
+  <section id="about">
+    <div class="wrap about">
+      <div class="about-art">
+        <!-- 換成店面照片：<img src="images/store.jpg" alt="專櫃店面"> -->
+      </div>
+      <div>
+        <div class="eyebrow">ABOUT US</div>
+        <h2>陪您挑一件，<br>真正會常穿的衣服。</h2>
+        <p>我們在百貨公司設櫃多年，熟客大多是四、五十歲以上的女性。她們要的不是追流行，而是穿起來舒服、顯氣色、修飾身形，而且洗了幾次還是挺的衣服。</p>
+        <p>每一季的款式都由店長親自挑選、試穿過才上架。來店裡不用急，可以慢慢試，我們會依您的身形和場合給建議，需要修改褲長袖長也可以幫忙處理。</p>
+        <div class="points">
+          <div><b>親自試穿挑選</b><span>每款上架前都先試過</span></div>
+          <div><b>一對一建議</b><span>依身形與場合搭配</span></div>
+          <div><b>修改服務</b><span>褲長、袖長可代為修改</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="logo">雅緻衣坊</div>
+  <div>百貨專櫃｜歡迎蒞臨試穿</div>
+  <div>© <span id="yr"></span> 雅緻衣坊</div>
+</footer>
+
+<script>
+/* ====== 設定：只要改這一行 ======
+   把 Google 試算表「發布到網路 → CSV」得到的網址貼在引號裡。
+   留空的話，網頁會顯示下面的示意商品。                         */
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQKPhDRzna0Zkwc4__iug4PbUcXcltjAFh1T_m7X55nC0GJYVJE6bV0P3bTKB8MzqRmv4WBKFmBM5X8/pub?output=csv";
+
+/* 示意商品（還沒接上試算表時顯示） */
+const sample = [
+  {name:"羊毛混紡雙排扣大衣", cat:"外套", color:"駝色",   size:"M–XL",  price:6880, img:"", tag:"新品"},
+  {name:"輕暖鋪棉短版外套",   cat:"外套", color:"深藍",   size:"M–2XL", price:3980, img:"", tag:""},
+  {name:"高領針織上衣",       cat:"上衣", color:"米白",   size:"F",     price:1980, img:"", tag:"熱銷"},
+  {name:"真絲印花襯衫",       cat:"上衣", color:"墨綠花", size:"M–XL",  price:3280, img:"", tag:""},
+  {name:"修身直筒西裝褲",     cat:"褲子", color:"黑",     size:"S–2XL", price:2580, img:"", tag:""},
+  {name:"鬆緊腰寬褲",         cat:"褲子", color:"燕麥",   size:"M–2XL", price:2280, img:"", tag:"新品"},
+  {name:"A字針織長裙",        cat:"裙裝", color:"酒紅",   size:"F",     price:2680, img:"", tag:""},
+  {name:"V領收腰洋裝",        cat:"裙裝", color:"藏青",   size:"M–XL",  price:4280, img:"", tag:""},
+];
+
+/* 示意圖（沒放照片時顯示） */
+const tones = {外套:["#e6dccd","#8a6b4a"],上衣:["#ece6dd","#7a6f63"],褲子:["#dfe3ea","#4a5872"],裙裝:["#eadcdc","#8a4f55"]};
+const shapes = {
+  外套:'<path d="M35 8q15 8 30 0l14 10-6 18-8-4v88H35V32l-8 4-6-18z"/><path d="M50 12v108"/>',
+  上衣:'<path d="M38 10q12 6 24 0l18 14-8 14-8-4v56H36V34l-8 4-8-14z"/>',
+  褲子:'<path d="M32 10h36l6 110H56L50 44l-6 76H26z"/>',
+  裙裝:'<path d="M40 8h20l2 24 18 88H20l18-88z"/>',
+};
+const art = c => { const [bg,fg]=tones[c]||tones.上衣;
+  return `<div class="pic" style="background:${bg}"><svg viewBox="0 0 100 130" fill="none" stroke="${fg}" stroke-width="1.2">${shapes[c]||shapes.上衣}</svg>`; };
+
+const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* 解析 CSV（支援引號、逗號、換行） */
+function parseCSV(text){
+  const rows=[]; let row=[], f="", q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){f+='"';i++;} else q=false; } else f+=c; }
+    else if(c==='"') q=true;
+    else if(c===','){ row.push(f); f=""; }
+    else if(c==='\n'){ row.push(f); rows.push(row); row=[]; f=""; }
+    else if(c!=='\r') f+=c;
+  }
+  if(f||row.length){ row.push(f); rows.push(row); }
+  return rows;
+}
+
+/* 雲端硬碟分享連結 → 可直接顯示的圖片網址 */
+function photoURL(link){
+  link=(link||"").trim(); if(!link) return "";
+  const m = link.match(/\/d\/([\w-]{20,})/) || link.match(/[?&]id=([\w-]{20,})/);
+  return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1000` : link;
+}
+
+/* 把試算表的每一列轉成商品（依表頭名稱對應，欄位順序不拘） */
+function fromSheet(rows){
+  const head = rows[0].map(h=>h.trim());
+  const col = name => head.indexOf(name);
+  const get = (r,name) => (col(name)>=0 ? (r[col(name)]||"").trim() : "");
+  return rows.slice(1)
+    .filter(r => get(r,"名稱") && !/^(否|no|n|x)$/i.test(get(r,"顯示")))
+    .map(r => ({
+      name:get(r,"名稱"), cat:get(r,"分類")||"其他", color:get(r,"顏色"), size:get(r,"尺寸"),
+      price:get(r,"價格").replace(/[^\d]/g,""), img:photoURL(get(r,"照片連結")), tag:get(r,"標籤")
+    }));
+}
+
+const grid = document.getElementById("grid"), filters = document.getElementById("filters");
+let products = [];
+
+function render(cat){
+  const list = products.filter(p=>cat==="全部"||p.cat===cat);
+  grid.innerHTML = list.length ? list.map(p=>{
+    const meta=[p.color,p.size].filter(Boolean).map(esc).join("｜");
+    const price=Number(p.price);
+    return `
+    <article class="card">
+      ${p.img ? `<div class="pic" style="background:#eee8df"><img src="${esc(p.img)}" alt="${esc(p.name)}" loading="lazy" referrerpolicy="no-referrer">` : art(p.cat)}
+        ${p.tag?`<span class="tag">${esc(p.tag)}</span>`:""}</div>
+      <div class="info">
+        <h3>${esc(p.name)}</h3>
+        ${meta?`<div class="meta">${meta}</div>`:""}
+        <div class="price">${price ? "NT$ "+price.toLocaleString() : "價格請洽專櫃"}</div>
+      </div>
+    </article>`}).join("") : `<p style="grid-column:1/-1;text-align:center;color:var(--muted)">目前沒有展示中的商品</p>`;
+  [...filters.children].forEach(b=>b.classList.toggle("on",b.textContent===cat));
+}
+
+function setup(list){
+  products = list;
+  const cats = ["全部", ...new Set(products.map(p=>p.cat))];
+  filters.innerHTML = cats.map(c=>`<button type="button">${esc(c)}</button>`).join("");
+  render("全部");
+}
+filters.addEventListener("click",e=>{ if(e.target.tagName==="BUTTON") render(e.target.textContent); });
+
+async function load(){
+  if(!SHEET_CSV_URL){ setup(sample); return; }
+  grid.innerHTML = `<p style="grid-column:1/-1;text-align:center;color:var(--muted)">商品載入中…</p>`;
+  try{
+    const res = await fetch(SHEET_CSV_URL + (SHEET_CSV_URL.includes("?")?"&":"?") + "t=" + Date.now());
+    if(!res.ok) throw new Error(res.status);
+    setup(fromSheet(parseCSV(await res.text())));
+  }catch(err){
+    grid.innerHTML = `<p style="grid-column:1/-1;text-align:center;color:var(--muted)">商品資料暫時無法載入，請稍後再重新整理。</p>`;
+    console.error("讀取試算表失敗：", err);
+  }
+}
+load();
+document.getElementById("yr").textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
