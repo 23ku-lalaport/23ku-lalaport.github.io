@@ -74,6 +74,32 @@
   .points b{display:block;font-family:var(--serif);font-size:19px;color:var(--navy);font-weight:600}
   .points span{font-size:15px;color:var(--muted)}
 
+  .card{cursor:pointer}
+  .card:focus-visible{outline:2px solid var(--navy);outline-offset:3px}
+
+  /* 詳細視窗 */
+  .detail{position:fixed;inset:0;z-index:50;background:rgba(30,26,22,.6);display:flex;align-items:center;justify-content:center;padding:20px}
+  .detail[hidden]{display:none}
+  .d-box{position:relative;background:var(--paper);width:min(960px,100%);max-height:92vh;overflow:auto;display:grid;grid-template-columns:1.2fr 1fr}
+  .d-pic{background:#eee8df;min-height:360px;position:relative}
+  .d-pic img{width:100%;height:100%;max-height:92vh;object-fit:contain}
+  .d-pic .pic{height:100%}
+  .d-info{padding:40px 32px}
+  .d-info h3{font-family:var(--serif);font-size:28px;font-weight:600;line-height:1.4;margin:6px 0 10px}
+  .d-tag{display:inline-block;background:var(--camel);color:#fff;font-size:14px;padding:2px 12px;letter-spacing:.1em}
+  .d-price{font-size:24px;color:var(--navy);font-weight:500;margin-bottom:22px}
+  .d-info dl{display:grid;grid-template-columns:auto 1fr;gap:10px 20px;border-top:1px solid var(--line);padding-top:20px}
+  .d-info dt{color:var(--muted)}
+  .d-note{margin-top:26px;font-size:15px;color:var(--muted)}
+  .d-close{position:absolute;top:10px;right:10px;z-index:2;width:44px;height:44px;border:0;border-radius:50%;background:rgba(255,255,255,.9);font-size:20px;cursor:pointer;color:var(--ink)}
+  @media (max-width:800px){
+    .detail{padding:0;align-items:flex-end}
+    .d-box{grid-template-columns:1fr;max-height:100vh;height:100%}
+    .d-pic{min-height:0}
+    .d-pic img{max-height:70vh}
+    .d-info{padding:24px 20px 36px}
+  }
+
   footer{padding:48px 0;text-align:center;color:var(--muted);font-size:15px}
   footer .logo{display:inline-block;margin-bottom:8px}
 
@@ -147,6 +173,14 @@
   <div>© <span id="yr"></span> 雅緻衣坊</div>
 </footer>
 
+<div id="detail" class="detail" hidden role="dialog" aria-modal="true" aria-label="商品詳細">
+  <div class="d-box">
+    <button class="d-close" type="button" aria-label="關閉">✕</button>
+    <div class="d-pic"></div>
+    <div class="d-info"></div>
+  </div>
+</div>
+
 <script src="config.js"></script>
 <script>
 /* 設定在 config.js 裡 */
@@ -219,11 +253,12 @@ let products = [];
 
 function render(cat){
   const list = products.filter(p=>cat==="全部"||p.cat===cat);
-  grid.innerHTML = list.length ? list.map(p=>{
+  shown = list;
+  grid.innerHTML = list.length ? list.map((p,i)=>{
     const meta=[p.color,p.size].filter(Boolean).map(esc).join("｜");
     const price=Number(p.price);
     return `
-    <article class="card">
+    <article class="card" data-i="${i}" tabindex="0" role="button" aria-label="查看 ${esc(p.name)} 詳細">
       ${p.img ? `<div class="pic" style="background:#eee8df"><img src="${esc(p.img)}" alt="${esc(p.name)}" loading="lazy" referrerpolicy="no-referrer">` : art(p.cat)}
         ${p.tag?`<span class="tag">${esc(p.tag)}</span>`:""}</div>
       <div class="info">
@@ -242,6 +277,32 @@ function setup(list){
   render("全部");
 }
 filters.addEventListener("click",e=>{ if(e.target.tagName==="BUTTON") render(e.target.textContent); });
+
+/* ===== 點衣服看大圖與詳細資料 ===== */
+let shown = [];
+const dlg = document.getElementById("detail");
+function openDetail(i){
+  const p = shown[i]; if(!p) return;
+  const price = Number(p.price);
+  const big = p.img ? p.img.replace(/sz=w\d+/,"sz=w2000") : "";
+  const rows = [["分類",p.cat],["顏色",p.color],["尺寸",p.size]].filter(r=>r[1]);
+  dlg.querySelector(".d-pic").innerHTML = big
+    ? `<img src="${esc(big)}" alt="${esc(p.name)}" referrerpolicy="no-referrer">`
+    : art(p.cat) + `</div>`;
+  dlg.querySelector(".d-info").innerHTML = `
+    ${p.tag?`<span class="d-tag">${esc(p.tag)}</span>`:""}
+    <h3>${esc(p.name)}</h3>
+    <div class="d-price">${price ? "NT$ "+price.toLocaleString() : "價格請洽專櫃"}</div>
+    <dl>${rows.map(r=>`<dt>${r[0]}</dt><dd>${esc(r[1])}</dd>`).join("")}</dl>
+    <p class="d-note">歡迎到專櫃試穿，實際顏色以現場為準。</p>`;
+  dlg.hidden = false; document.body.style.overflow = "hidden";
+  dlg.querySelector(".d-close").focus();
+}
+function closeDetail(){ dlg.hidden = true; document.body.style.overflow = ""; }
+grid.addEventListener("click", e=>{ const c=e.target.closest(".card"); if(c) openDetail(+c.dataset.i); });
+grid.addEventListener("keydown", e=>{ const c=e.target.closest(".card"); if(c && (e.key==="Enter"||e.key===" ")){ e.preventDefault(); openDetail(+c.dataset.i); } });
+dlg.addEventListener("click", e=>{ if(e.target===dlg || e.target.closest(".d-close")) closeDetail(); });
+document.addEventListener("keydown", e=>{ if(e.key==="Escape" && !dlg.hidden) closeDetail(); });
 
 async function load(){
   if(!SCRIPT_URL && !SHEET_CSV_URL){ setup(sample); return; }
