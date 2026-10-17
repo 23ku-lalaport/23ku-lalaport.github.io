@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>雅緻衣坊｜百貨專櫃</title>
-<meta name="description" content="百貨公司專櫃服飾，為成熟女性挑選舒適、得體、耐穿的日常與正式穿搭。">
+<title>台中LaLaport23區</title>
+<meta name="description" content="台中LaLaport23區，本季外套、上衣、針織、褲子、襯衫、背心商品一覽。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
@@ -90,6 +90,7 @@
   .d-price{font-size:24px;color:var(--navy);font-weight:500;margin-bottom:22px}
   .d-info dl{display:grid;grid-template-columns:auto 1fr;gap:10px 20px;border-top:1px solid var(--line);padding-top:20px}
   .d-info dt{color:var(--muted)}
+  .d-desc{margin-top:22px;padding-top:18px;border-top:1px solid var(--line);white-space:normal}
   .d-note{margin-top:26px;font-size:15px;color:var(--muted)}
   .d-close{position:absolute;top:10px;right:10px;z-index:2;width:44px;height:44px;border:0;border-radius:50%;background:rgba(255,255,255,.9);font-size:20px;cursor:pointer;color:var(--ink)}
   @media (max-width:800px){
@@ -100,6 +101,10 @@
     .d-info{padding:24px 20px 36px}
   }
 
+  .bar-note{font-size:15px;color:var(--muted);letter-spacing:.2em}
+  .catalog{padding:28px 0 56px}
+  .catalog .filters{position:sticky;top:72px;z-index:5;background:var(--bg);padding:12px 0;margin-bottom:24px}
+  .fine{text-align:center;color:var(--muted);font-size:15px;margin-top:40px}
   footer{padding:48px 0;text-align:center;color:var(--muted);font-size:15px}
   footer .logo{display:inline-block;margin-bottom:8px}
 
@@ -120,57 +125,24 @@
 
 <header>
   <div class="wrap bar">
-    <a class="logo" href="#top">雅緻衣坊<small>ELEGANT WEAR</small></a>
-    <nav><a href="#products">商品</a><a href="#about">關於我們</a></nav>
+    <a class="logo" href="#top">台中LaLaport23區</a>
+    <span class="bar-note">商品目錄</span>
   </div>
 </header>
 
 <main id="top">
-  <div class="wrap hero">
-    <div>
-      <div class="eyebrow">2026 秋冬系列</div>
-      <h1>穿得舒服，<br>也穿得有份量。</h1>
-      <p>為成熟女性挑選的百貨專櫃服飾。好的布料、合身的剪裁，從上班、聚餐到出遊，一件就能從容出門。</p>
-      <a class="btn" href="#products">看本季商品</a>
-    </div>
-    <div class="hero-art">
-      <!-- 換成店面或模特兒照片：<img src="images/hero.jpg" alt="本季主打穿搭"> -->
-      <svg viewBox="0 0 100 130" fill="none" stroke="#8a6b4a" stroke-width="1.2"><path d="M35 8q15 8 30 0l14 10-6 18-8-4v88H35V32l-8 4-6-18z"/><path d="M50 12v108M42 40h16"/></svg>
-    </div>
-  </div>
-
-  <section id="products">
+  <section id="products" class="catalog">
     <div class="wrap">
-      <div class="head"><h2>本季商品</h2><p>實際款式與尺寸以專櫃現場為準</p></div>
       <div class="filters" id="filters"></div>
       <div class="grid" id="grid"></div>
-    </div>
-  </section>
-
-  <section id="about">
-    <div class="wrap about">
-      <div class="about-art">
-        <!-- 換成店面照片：<img src="images/store.jpg" alt="專櫃店面"> -->
-      </div>
-      <div>
-        <div class="eyebrow">ABOUT US</div>
-        <h2>陪您挑一件，<br>真正會常穿的衣服。</h2>
-        <p>我們在百貨公司設櫃多年，熟客大多是四、五十歲以上的女性。她們要的不是追流行，而是穿起來舒服、顯氣色、修飾身形，而且洗了幾次還是挺的衣服。</p>
-        <p>每一季的款式都由店長親自挑選、試穿過才上架。來店裡不用急，可以慢慢試，我們會依您的身形和場合給建議，需要修改褲長袖長也可以幫忙處理。</p>
-        <div class="points">
-          <div><b>親自試穿挑選</b><span>每款上架前都先試過</span></div>
-          <div><b>一對一建議</b><span>依身形與場合搭配</span></div>
-          <div><b>修改服務</b><span>褲長、袖長可代為修改</span></div>
-        </div>
-      </div>
+      <p class="fine">實際款式、顏色與尺寸以專櫃現場為準，歡迎蒞臨試穿。</p>
     </div>
   </section>
 </main>
 
 <footer>
-  <div class="logo">雅緻衣坊</div>
-  <div>百貨專櫃｜歡迎蒞臨試穿</div>
-  <div>© <span id="yr"></span> 雅緻衣坊</div>
+  <div class="logo">台中LaLaport23區</div>
+    <div>© <span id="yr"></span> 台中LaLaport23區</div>
 </footer>
 
 <div id="detail" class="detail" hidden role="dialog" aria-modal="true" aria-label="商品詳細">
@@ -189,24 +161,29 @@ const SCRIPT_URL = CFG.SCRIPT_URL || "";
 const SHEET_CSV_URL = CFG.SHEET_CSV_URL || "";
 
 /* 示意商品（還沒接上試算表時顯示） */
+/* 分類按鈕固定順序 */
+const CATS = ["外套","上衣","針織","褲子","襯衫","背心"];
+
 const sample = [
   {name:"羊毛混紡雙排扣大衣", cat:"外套", color:"駝色",   size:"M–XL",  price:6880, img:"", tag:"新品"},
   {name:"輕暖鋪棉短版外套",   cat:"外套", color:"深藍",   size:"M–2XL", price:3980, img:"", tag:""},
-  {name:"高領針織上衣",       cat:"上衣", color:"米白",   size:"F",     price:1980, img:"", tag:"熱銷"},
-  {name:"真絲印花襯衫",       cat:"上衣", color:"墨綠花", size:"M–XL",  price:3280, img:"", tag:""},
+  {name:"高領針織上衣",       cat:"針織", color:"米白",   size:"F",     price:1980, img:"", tag:"熱銷"},
+  {name:"真絲印花襯衫",       cat:"襯衫", color:"墨綠花", size:"M–XL",  price:3280, img:"", tag:""},
   {name:"修身直筒西裝褲",     cat:"褲子", color:"黑",     size:"S–2XL", price:2580, img:"", tag:""},
   {name:"鬆緊腰寬褲",         cat:"褲子", color:"燕麥",   size:"M–2XL", price:2280, img:"", tag:"新品"},
-  {name:"A字針織長裙",        cat:"裙裝", color:"酒紅",   size:"F",     price:2680, img:"", tag:""},
-  {name:"V領收腰洋裝",        cat:"裙裝", color:"藏青",   size:"M–XL",  price:4280, img:"", tag:""},
+  {name:"圓領棉質上衣",       cat:"上衣", color:"白",     size:"M–XL",  price:1580, img:"", tag:""},
+  {name:"針織背心",           cat:"背心", color:"藏青",   size:"F",     price:2280, img:"", tag:""},
 ];
 
 /* 示意圖（沒放照片時顯示） */
-const tones = {外套:["#e6dccd","#8a6b4a"],上衣:["#ece6dd","#7a6f63"],褲子:["#dfe3ea","#4a5872"],裙裝:["#eadcdc","#8a4f55"]};
+const tones = {外套:["#e6dccd","#8a6b4a"],上衣:["#ece6dd","#7a6f63"],褲子:["#dfe3ea","#4a5872"],針織:["#eadcdc","#8a4f55"],襯衫:["#e4e8e3","#55705a"],背心:["#e6e1ea","#5e4f72"]};
 const shapes = {
   外套:'<path d="M35 8q15 8 30 0l14 10-6 18-8-4v88H35V32l-8 4-6-18z"/><path d="M50 12v108"/>',
   上衣:'<path d="M38 10q12 6 24 0l18 14-8 14-8-4v56H36V34l-8 4-8-14z"/>',
   褲子:'<path d="M32 10h36l6 110H56L50 44l-6 76H26z"/>',
-  裙裝:'<path d="M40 8h20l2 24 18 88H20l18-88z"/>',
+  針織:'<path d="M38 10q12 6 24 0l18 14-8 14-8-4v56H36V34l-8 4-8-14z"/><path d="M36 84h28M36 90h28"/>',
+  襯衫:'<path d="M38 10l12 10 12-10 18 14-8 14-8-4v66H36V34l-8 4-8-14z"/><path d="M50 20v80"/>',
+  背心:'<path d="M38 10q4 14 12 14t12-14l8 4v12q-6 6-6 14v60H36V40q0-8-6-14V14z"/>',
 };
 const art = c => { const [bg,fg]=tones[c]||tones.上衣;
   return `<div class="pic" style="background:${bg}"><svg viewBox="0 0 100 130" fill="none" stroke="${fg}" stroke-width="1.2">${shapes[c]||shapes.上衣}</svg>`; };
@@ -244,7 +221,7 @@ function fromSheet(rows){
     .filter(r => get(r,"名稱") && !/^(否|no|n|x)$/i.test(get(r,"顯示")))
     .map(r => ({
       name:get(r,"名稱"), cat:get(r,"分類")||"其他", color:get(r,"顏色"), size:get(r,"尺寸"),
-      price:get(r,"價格").replace(/[^\d]/g,""), img:photoURL(get(r,"照片連結")), tag:get(r,"標籤")
+      price:get(r,"價格").replace(/[^\d]/g,""), img:photoURL(get(r,"照片連結")), tag:get(r,"標籤"), note:get(r,"備註")
     }));
 }
 
@@ -272,7 +249,7 @@ function render(cat){
 
 function setup(list){
   products = list;
-  const cats = ["全部", ...new Set(products.map(p=>p.cat))];
+  const cats = ["全部", ...CATS, ...[...new Set(products.map(p=>p.cat))].filter(c=>!CATS.includes(c))];
   filters.innerHTML = cats.map(c=>`<button type="button">${esc(c)}</button>`).join("");
   render("全部");
 }
@@ -294,6 +271,7 @@ function openDetail(i){
     <h3>${esc(p.name)}</h3>
     <div class="d-price">${price ? "NT$ "+price.toLocaleString() : "價格請洽專櫃"}</div>
     <dl>${rows.map(r=>`<dt>${r[0]}</dt><dd>${esc(r[1])}</dd>`).join("")}</dl>
+    ${p.note?`<p class="d-desc">${esc(p.note).replace(/\n/g,"<br>")}</p>`:""}
     <p class="d-note">歡迎到專櫃試穿，實際顏色以現場為準。</p>`;
   dlg.hidden = false; document.body.style.overflow = "hidden";
   dlg.querySelector(".d-close").focus();
