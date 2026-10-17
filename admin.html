@@ -127,6 +127,9 @@ async function call(payload){
   const res = await fetch(URL_, {method:"POST", body:JSON.stringify({...payload, password:$("pw").value})});
   const data = await res.json();
   if(!data.ok) throw new Error(data.error||"發生錯誤");
+  if(payload.action!=="list" && payload.action!=="photo"){       // 有改資料 → 清掉顧客頁在這支手機的暫存
+    try{ localStorage.removeItem("shop-items-v3"); localStorage.removeItem("shop-items-v2"); }catch(e){}
+  }
   return data;
 }
 

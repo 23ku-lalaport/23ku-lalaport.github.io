@@ -10,18 +10,19 @@
 <meta name="description" content="台中LaLaport23區，本季外套、上衣、針織、褲子、襯衫、背心商品一覽。">
 <meta property="og:title" content="台中LaLaport23區｜商品目錄">
 <meta property="og:description" content="本季外套、上衣、針織、褲子、襯衫、背心，歡迎到專櫃試穿。">
+<link rel="preconnect" href="https://docs.google.com">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
 <link rel="preconnect" href="https://drive.google.com">
 <script src="config.js"></script>
 <script>
-/* 網頁一打開就同時開始抓資料（兩個來源，誰先到先顯示） */
+/* 網頁一打開就同時開始抓資料：試算表即時查詢（快）＋小幫手（確認用） */
 (function(){
   var C = window.SHOP || {}, E = window.__early = {};
-  if(C.SCRIPT_URL) E.script = fetch(C.SCRIPT_URL).then(function(r){ return r.json(); });
-  if(C.SHEET_CSV_URL) E.csv = fetch(C.SHEET_CSV_URL + (C.SHEET_CSV_URL.indexOf("?")<0?"?":"&") + "t=" + Date.now())
+  if(C.SHEET_ID) E.live = fetch("https://docs.google.com/spreadsheets/d/" + C.SHEET_ID + "/gviz/tq?tqx=out:csv&headers=1&t=" + Date.now(), {cache:"no-store"})
     .then(function(r){ if(!r.ok) throw new Error(r.status); return r.text(); });
-  [E.script, E.csv].forEach(function(p){ if(p) p.catch(function(){}); });
+  if(C.SCRIPT_URL) E.script = fetch(C.SCRIPT_URL, {cache:"no-store"}).then(function(r){ return r.json(); });
+  [E.live, E.script].forEach(function(p){ if(p) p.catch(function(){}); });
 })();
 </script>
 <style>
@@ -354,38 +355,46 @@ document.addEventListener("keydown", e=>{
 });
 
 /* ===== 讀資料 =====
-   1. 先顯示這支手機上次存的資料（第二次打開幾乎是瞬間）
-   2. 同時抓「發布的試算表」（快，但可能晚幾分鐘）和「小幫手」（最新，但較慢）
-   3. 哪個先到先顯示；小幫手的結果到了一律以它為準                       */
-const CACHE_KEY = "shop-items-v2";
+   1. 這支手機 30 分鐘內看過的話，先顯示上次的資料（瞬間）
+   2. 「試算表即時查詢」最快拿到最新資料（約 0.5 秒），馬上更新畫面
+   3. 小幫手在背景再確認一次，有差異就以小幫手為準
+   4. 兩個都壞掉時，才讀「發布的試算表」備用                          */
+const CACHE_KEY = "shop-items-v3", CACHE_MAX = 30*60*1000;
 const norm = items => items.map(p=>({...p, cat:p.cat||"其他", price:String(p.price??"").replace(/[^\d]/g,""), ids:p.ids||driveIds((p.imgs||[p.img||""]).join("\n"))}));
-const same = (a,b) => JSON.stringify(a) === JSON.stringify(b);
-const save = list => { try{ localStorage.setItem(CACHE_KEY, JSON.stringify(list)); }catch(e){} };
+const slim = list => list.map(p=>({name:p.name, cat:p.cat||"其他", color:p.color||"", size:p.size||"", price:String(p.price||""), ids:p.ids, tag:p.tag||"", note:p.note||""}));
+const same = (a,b) => JSON.stringify(slim(a||[])) === JSON.stringify(slim(b||[]));
+const save = list => { try{ localStorage.setItem(CACHE_KEY, JSON.stringify({t:Date.now(), items:slim(list)})); }catch(e){} };
 async function load(){
-  if(!SCRIPT_URL && !SHEET_CSV_URL){ setup(sample); return; }
+  if(!SCRIPT_URL && !SHEET_CSV_URL && !CFG.SHEET_ID){ setup(sample); return; }
+  try{ localStorage.removeItem("shop-items-v2"); }catch(e){}
   const early = window.__early || {};
-  let current = null, final = false;
-  try{ current = JSON.parse(localStorage.getItem(CACHE_KEY)||"null"); }catch(e){}
-  if(current && current.length) setup(current);
-  else { current = null; grid.innerHTML = `<p class="empty">商品載入中…</p>`; }
+  let current = null, fromScript = false, live = false;
+  try{
+    const c = JSON.parse(localStorage.getItem(CACHE_KEY)||"null");
+    if(c && Date.now() - c.t < CACHE_MAX && c.items.length) current = c.items;
+  }catch(e){}
+  if(current) setup(current);
+  else grid.innerHTML = `<p class="empty">商品載入中…</p>`;
+  const show = list => { if(!same(list, current)){ current = list; setup(list); } save(list); };
 
-  const fromCsv = early.csv ? early.csv.then(t => fromSheet(parseCSV(t))) : Promise.reject();
-  const fromScript = early.script ? early.script.then(d => { if(!d.ok) throw new Error(d.error); return norm(d.items); }) : Promise.reject();
-
-  fromCsv.then(list => {
-    if(final) return;                                  // 小幫手已經到了就不用
-    if(!same(list, current)){ current = list; setup(list); }
-  }).catch(()=>{});
+  const liveP = early.live ? early.live.then(t => {
+    const list = fromSheet(parseCSV(t));
+    if(!fromScript){ live = true; show(list); }      // 小幫手還沒到就先用它
+  }).catch(err => console.warn("即時查詢失敗：", err)) : Promise.resolve();
 
   try{
-    const list = await fromScript;
-    final = true;
-    if(!same(list, current)){ current = list; setup(list); }
-    save(list);
+    const d = await (early.script || Promise.reject(new Error("no script")));
+    if(!d.ok) throw new Error(d.error);
+    fromScript = true; show(norm(d.items));
   }catch(err){
-    console.error("讀取小幫手失敗，改用試算表：", err);
-    try{ const list = await fromCsv; if(!same(list,current)) setup(list); save(list); }
-    catch(e){ if(!current) grid.innerHTML = `<p class="empty">商品資料暫時無法載入，請稍後再重新整理。</p>`; }
+    console.warn("讀取小幫手失敗：", err);
+    await liveP;
+    if(live || current) return;
+    try{                                               // 最後備用
+      const res = await fetch(SHEET_CSV_URL + (SHEET_CSV_URL.includes("?")?"&":"?") + "t=" + Date.now());
+      if(!res.ok) throw new Error(res.status);
+      setup(fromSheet(parseCSV(await res.text())));
+    }catch(e){ grid.innerHTML = `<p class="empty">商品資料暫時無法載入，請稍後再重新整理。</p>`; }
   }
 }
 load();
