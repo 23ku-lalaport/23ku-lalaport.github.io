@@ -16,12 +16,10 @@
   .box.editing{border:2px solid var(--camel)}
   h2{font-size:21px;margin-bottom:14px}
   label{display:block;font-weight:600;margin:14px 0 6px}
-  label small{font-weight:400;color:var(--muted)}
+  label small,.lbl small{font-weight:400;color:var(--muted)}
+  .lbl{font-weight:600;margin:0 0 8px;display:flex;justify-content:space-between;align-items:baseline}
   input,select,textarea{width:100%;font:inherit;padding:12px 14px;border:1px solid #cfc4b4;border-radius:8px;background:#fff}
   textarea{min-height:96px;resize:vertical}
-  .photo{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;border:2px dashed #cfc4b4;border-radius:10px;min-height:180px;cursor:pointer;color:var(--muted);text-align:center;overflow:hidden;background:#fff}
-  .photo img{max-height:320px;width:auto}
-  .photo input{display:none}
   .row{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
   button{font:inherit;cursor:pointer;border:0;border-radius:8px}
   .big{width:100%;background:var(--navy);color:#fff;padding:16px;font-size:21px;margin-top:22px}
@@ -29,6 +27,19 @@
   .ghost{width:100%;background:#eee8df;color:var(--ink);padding:14px;font-size:18px;margin-top:10px}
   .msg{margin-top:14px;font-weight:600;min-height:1.6em}
   .msg.ok{color:var(--ok)} .msg.bad{color:var(--bad)}
+
+  /* 照片格 */
+  .shots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .shot{position:relative;aspect-ratio:3/4;border-radius:8px;overflow:hidden;background:#eee8df}
+  .shot img{width:100%;height:100%;object-fit:cover;display:block}
+  .shot .x{position:absolute;top:4px;right:4px;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:16px;line-height:32px;padding:0}
+  .shot .cover{position:absolute;left:0;right:0;bottom:0;background:rgba(168,121,74,.92);color:#fff;font-size:13px;text-align:center;padding:2px 0}
+  .shot .mv{position:absolute;left:4px;top:4px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.9);color:var(--ink);font-size:15px;padding:0}
+  .add{aspect-ratio:3/4;border:2px dashed #cfc4b4;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);font-size:15px;cursor:pointer;background:#fff;text-align:center}
+  .add input{display:none}
+  .add b{font-size:28px;line-height:1}
+  .hint{font-size:14px;color:var(--muted);margin-top:8px}
+
   .item{padding:14px 0;border-top:1px solid var(--line)}
   .item:first-child{border-top:0}
   .item .top{display:flex;gap:12px;align-items:center}
@@ -57,10 +68,10 @@
 
   <form class="box" id="form">
     <h2 id="formTitle">新增衣服</h2>
-    <label class="photo" id="photoBox">
-      <span id="photoHint">📷<br>點這裡拍照或選照片</span>
-      <input type="file" id="file" accept="image/*">
-    </label>
+
+    <div class="lbl">照片 <small id="count">0 / 15 張</small></div>
+    <div class="shots" id="shots"></div>
+    <p class="hint">可一次選多張。第 1 張是封面；按照片左上角的「◀」可以往前移。</p>
 
     <label for="name">名稱 <small>（必填）</small></label>
     <input id="name" required placeholder="例如：針織開襟外套">
@@ -96,10 +107,13 @@
 <script src="config.js"></script>
 <script>
 const CATS = ["外套","上衣","針織","褲子","襯衫","背心"];
+const MAX = 15;
 const URL_ = (window.SHOP||{}).SCRIPT_URL || "";
 const $ = id => document.getElementById(id);
 const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const photoURL = (l,w=300) => { const m=(l||"").match(/\/d\/([\w-]{20,})/)||(l||"").match(/[?&]id=([\w-]{20,})/); return m?`https://drive.google.com/thumbnail?id=${m[1]}&sz=w${w}`:""; };
+const driveId = l => { const m=(l||"").match(/\/d\/([\w-]{20,})/)||(l||"").match(/[?&]id=([\w-]{20,})/); return m?m[1]:""; };
+const thumb = (l,w=300) => driveId(l) ? `https://drive.google.com/thumbnail?id=${driveId(l)}&sz=w${w}` : "";
+const imgsOf = p => p.imgs || (p.img ? [p.img] : []);
 
 $("cat").innerHTML = CATS.map(c=>`<option>${c}</option>`).join("");
 try{ $("pw").value = localStorage.getItem("shop-pw")||""; }catch(e){}
@@ -116,43 +130,59 @@ async function call(payload){
   return data;
 }
 
-/* ---------- 照片：縮小到最長邊 1400px ---------- */
-let photo = null;
-function setPreview(src, hint){
-  $("photoBox").querySelectorAll("img").forEach(x=>x.remove());
-  $("photoHint").innerHTML = hint;
-  if(src){ const pv=document.createElement("img"); pv.src=src; pv.referrerPolicy="no-referrer"; $("photoBox").prepend(pv); }
+/* ---------- 照片：shots 裡每張是 {link} (已上傳) 或 {data, src} (新的) ---------- */
+let shots = [];
+function drawShots(){
+  $("count").textContent = `${shots.length} / ${MAX} 張`;
+  $("shots").innerHTML = shots.map((s,i)=>`
+    <div class="shot">
+      <img src="${esc(s.src || thumb(s.link,400))}" alt="" referrerpolicy="no-referrer">
+      ${i>0?`<button type="button" class="mv" data-mv="${i}" aria-label="往前移">◀</button>`:""}
+      <button type="button" class="x" data-x="${i}" aria-label="移除">✕</button>
+      ${i===0?`<div class="cover">封面</div>`:""}
+    </div>`).join("") + (shots.length<MAX ? `
+    <label class="add"><b>＋</b>拍照／選照片<input type="file" id="file" accept="image/*" multiple></label>` : "");
 }
-$("file").addEventListener("change", async e=>{
-  const f = e.target.files[0]; if(!f) return;
-  $("photoHint").textContent = "照片處理中…";
-  try{
-    const img = await new Promise((ok,no)=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=no; i.src=URL.createObjectURL(f); });
-    const k = Math.min(1, 1400/Math.max(img.width,img.height));
-    const c = document.createElement("canvas"); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k);
-    c.getContext("2d").drawImage(img,0,0,c.width,c.height);
-    const dataUrl = c.toDataURL("image/jpeg",0.85);
-    photo = dataUrl.split(",")[1];
-    setPreview(dataUrl, editing ? "已換新照片" : "");
-  }catch(err){ photo=null; $("photoHint").textContent="這張照片讀不到，請換一張"; }
+$("shots").addEventListener("click", e=>{
+  const x=e.target.closest("[data-x]"), mv=e.target.closest("[data-mv]");
+  if(x){ shots.splice(+x.dataset.x,1); drawShots(); }
+  if(mv){ const i=+mv.dataset.mv; [shots[i-1],shots[i]]=[shots[i],shots[i-1]]; drawShots(); }
+});
+$("shots").addEventListener("change", async e=>{
+  if(e.target.id!=="file") return;
+  const files=[...e.target.files];
+  const room = MAX - shots.length;
+  if(files.length > room) alert(`最多 ${MAX} 張，這次只會加入前 ${room} 張。`);
+  say("照片處理中…", true);
+  for(const f of files.slice(0,room)){
+    try{
+      const img = await new Promise((ok,no)=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=no; i.src=URL.createObjectURL(f); });
+      const k = Math.min(1, 1200/Math.max(img.width,img.height));
+      const c = document.createElement("canvas"); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k);
+      c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+      const src = c.toDataURL("image/jpeg",0.82);
+      shots.push({src, data:src.split(",")[1]});
+    }catch(err){}
+  }
+  say("", true); drawShots();
 });
 
 /* ---------- 新增 / 編輯 ---------- */
-let editing = null;   // 正在編輯的衣服
-let items = [];
+let editing = null, items = [];
 
 function resetForm(){
-  editing = null; photo = null;
+  editing = null; shots = [];
   $("form").reset(); $("cat").value = CATS[0];
   $("form").classList.remove("editing");
   $("formTitle").textContent = "新增衣服";
   $("send").textContent = "上傳";
   $("cancel").hidden = true;
-  setPreview("", "📷<br>點這裡拍照或選照片");
+  drawShots();
 }
 
 function startEdit(p){
-  editing = p; photo = null;
+  editing = p;
+  shots = imgsOf(p).map(link=>({link}));
   $("name").value = p.name; $("color").value = p.color||""; $("size").value = p.size||"";
   $("price").value = String(p.price||"").replace(/[^\d]/g,""); $("tag").value = p.tag||""; $("note").value = p.note||"";
   if(p.cat && !CATS.includes(p.cat)) $("cat").insertAdjacentHTML("beforeend", `<option>${esc(p.cat)}</option>`);
@@ -161,27 +191,35 @@ function startEdit(p){
   $("formTitle").textContent = "編輯：" + p.name;
   $("send").textContent = "儲存修改";
   $("cancel").hidden = false;
-  setPreview(photoURL(p.img,600), photoURL(p.img) ? "" : "📷<br>點這裡加照片");
-  if(photoURL(p.img)) $("photoHint").textContent = "";
-  say("", true);
+  drawShots(); say("", true);
   $("form").scrollIntoView({behavior:"smooth"});
 }
 $("cancel").addEventListener("click", ()=>{ resetForm(); say("",true); });
 
 $("form").addEventListener("submit", async e=>{
   e.preventDefault();
-  if(!editing && !photo && !confirm("沒有選照片，確定要上傳嗎？")) return;
-  $("send").disabled = true; say(editing ? "儲存中，請稍等…" : "上傳中，請稍等…", true);
-  const data = { name:$("name").value.trim(), cat:$("cat").value, color:$("color").value.trim(), size:$("size").value.trim(),
-    price:$("price").value.trim(), tag:$("tag").value, note:$("note").value.trim(), image:photo, mime:"image/jpeg" };
+  if(!shots.length && !confirm("沒有照片，確定要儲存嗎？")) return;
+  $("send").disabled = true;
   try{
+    const name = $("name").value.trim();
+    const fresh = shots.filter(s=>!s.link);
+    let n = 0;
+    for(const s of shots){                       // 新照片一張一張傳
+      if(s.link) continue;
+      n++; say(`上傳照片中… ${n} / ${fresh.length}`, true);
+      s.link = (await call({action:"photo", name, image:s.data})).link;
+      delete s.data;
+    }
+    say("儲存資料中…", true);
+    const data = { name, cat:$("cat").value, color:$("color").value.trim(), size:$("size").value.trim(),
+      price:$("price").value.trim(), tag:$("tag").value, note:$("note").value.trim(), imgs:shots.map(s=>s.link) };
     if(editing) await call({action:"update", row:editing.row, oldName:editing.name, ...data});
     else await call({action:"add", ...data});
     const wasEdit = !!editing;
     resetForm();
     say(wasEdit ? "✓ 已儲存修改！" : "✓ 上傳成功！", true);
     if($("list").dataset.loaded) loadList();
-  }catch(err){ say("✗ "+err.message); }
+  }catch(err){ say("✗ "+err.message+"（已傳好的照片不會重傳，可以直接再按一次）"); }
   $("send").disabled = false;
 });
 
@@ -190,11 +228,13 @@ async function loadList(){
   const box=$("list"); box.dataset.loaded=1; box.innerHTML="<p class='sub'>載入中…</p>";
   try{
     items = (await call({action:"list"})).items;
-    box.innerHTML = items.length ? items.map((p,i)=>({p,i})).reverse().map(({p,i})=>`
+    box.innerHTML = items.length ? items.map((p,i)=>({p,i})).reverse().map(({p,i})=>{
+      const im = imgsOf(p);
+      return `
       <div class="item ${p.show?"":"off"}">
         <div class="top">
-          ${photoURL(p.img)?`<img src="${photoURL(p.img)}" alt="" referrerpolicy="no-referrer" loading="lazy">`:`<div class="noimg"></div>`}
-          <div class="t"><b>${esc(p.name)}</b><span>${esc([p.cat,p.price&&("NT$ "+p.price)].filter(Boolean).join("｜"))}${p.show?"":"｜已下架"}</span></div>
+          ${im.length?`<img src="${thumb(im[0])}" alt="" referrerpolicy="no-referrer" loading="lazy">`:`<div class="noimg"></div>`}
+          <div class="t"><b>${esc(p.name)}</b><span>${esc([p.cat,p.price&&("NT$ "+p.price),im.length&&(im.length+" 張照片")].filter(Boolean).join("｜"))}${p.show?"":"｜已下架"}</span></div>
         </div>
         ${p.note?`<div class="note">備註：${esc(p.note)}</div>`:""}
         <div class="acts">
@@ -202,7 +242,7 @@ async function loadList(){
           <button type="button" class="tog" data-act="show" data-i="${i}">${p.show?"下架":"上架"}</button>
           <button type="button" class="del" data-act="delete" data-i="${i}">刪除</button>
         </div>
-      </div>`).join("") : "<p class='sub'>還沒有衣服</p>";
+      </div>`}).join("") : "<p class='sub'>還沒有衣服</p>";
   }catch(err){ box.innerHTML=`<p class="msg bad">✗ ${esc(err.message)}</p><button class="big" type="button" id="loadList" style="margin-top:8px">重新載入</button>`; }
 }
 $("list").addEventListener("click", async e=>{
