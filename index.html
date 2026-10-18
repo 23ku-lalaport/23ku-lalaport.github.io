@@ -61,6 +61,20 @@
   .clear{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;background:none;color:var(--muted);font-size:18px;cursor:pointer}
   .clear[hidden]{display:none}
 
+  /* ===== 品牌 ===== */
+  .brands{display:flex;gap:10px;padding:2px 0 10px;overflow-x:auto;scrollbar-width:none}
+  .brands::-webkit-scrollbar{display:none}
+  .brands button{flex:0 0 auto;min-width:76px;height:40px;padding:0 16px;border:1px solid #cfc4b4;border-radius:999px;background:#fff;
+       font-size:15px;letter-spacing:.08em;cursor:pointer;color:var(--ink)}
+  .brands button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .subs{display:flex;gap:8px;padding:0 0 10px;overflow-x:auto;scrollbar-width:none}
+  .subs[hidden]{display:none}
+  .subs::-webkit-scrollbar{display:none}
+  .subs button{flex:0 0 auto;height:32px;padding:0 12px;border:0;border-bottom:2px solid transparent;background:none;font-size:14px;color:var(--muted);letter-spacing:.06em;cursor:pointer}
+  .subs button.on{color:var(--ink);border-bottom-color:var(--camel)}
+  .brand{font-size:11px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin-bottom:1px}
+  .d-brand{font-size:13px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase;margin-bottom:2px}
+
   /* ===== 商品格 ===== */
   main{padding:12px 0 calc(32px + var(--sb))}
   .count{color:var(--muted);font-size:14px;margin:2px 0 10px}
@@ -150,6 +164,8 @@
       <a class="logo" href="./">台中LaLaport23區</a>
       <span class="bar-note">商品目錄</span>
     </div>
+    <nav class="brands" id="brands" aria-label="品牌"></nav>
+    <div class="subs" id="subs" hidden></div>
     <div class="tools">
       <select id="cat" aria-label="選擇分類"></select>
       <div class="search">
@@ -189,9 +205,9 @@ const CATS = ["外套","上衣","針織","褲子","襯衫","背心"];
 const sample = [
   {name:"羊毛混紡雙排扣大衣", cat:"外套", color:"駝色", size:"M–XL", price:6880, tag:"新品"},
   {name:"高領針織上衣", cat:"針織", color:"米白", size:"F", price:1980, tag:"熱銷"},
-  {name:"真絲印花襯衫", cat:"襯衫", color:"墨綠花", size:"M–XL", price:3280},
-  {name:"修身直筒西裝褲", cat:"褲子", color:"黑", size:"S–2XL", price:2580},
-].map(p=>({tag:"", note:"", ...p, ids:[]}));
+  {name:"真絲印花襯衫", brand:"SELECT", cat:"襯衫", color:"墨綠花", size:"M–XL", price:3280},
+  {name:"修身直筒西裝褲", brand:"SELECT", cat:"褲子", color:"黑", size:"S–2XL", price:2580},
+].map(p=>({tag:"", note:"", brand:"23區", ...p, ids:[]}));
 
 /* 示意圖（沒放照片時顯示） */
 const tones = {外套:["#e6dccd","#8a6b4a"],上衣:["#ece6dd","#7a6f63"],褲子:["#dfe3ea","#4a5872"],針織:["#eadcdc","#8a4f55"],襯衫:["#e4e8e3","#55705a"],背心:["#e6e1ea","#5e4f72"]};
@@ -232,14 +248,22 @@ function driveIds(text){
 }
 const dpr = Math.min(window.devicePixelRatio||1, 3);
 const pic = (id,w) => `https://drive.google.com/thumbnail?id=${id}&sz=w${w}`;
+/* 照片讀不到：先換另一個 Google 圖片網址，再不行就顯示空白底色（不會出現破圖） */
+document.addEventListener("error", e=>{
+  const img = e.target; if(img.tagName!=="IMG") return;
+  const m = img.src.match(/thumbnail\?id=([\w-]+)&sz=w(\d+)/);
+  if(m && !img.dataset.alt){ img.dataset.alt = 1; img.src = `https://lh3.googleusercontent.com/d/${m[1]}=w${m[2]}`; }
+  else img.style.visibility = "hidden";
+}, true);
 
 function fromSheet(rows){
-  const head = rows[0].map(h=>h.trim());
+  const head = (rows[0]||[]).map(h=>h.trim());
+  if(!head.includes("名稱")) throw new Error("not a product sheet");
   const get = (r,name) => (head.indexOf(name)>=0 ? (r[head.indexOf(name)]||"").trim() : "");
   return rows.slice(1)
     .filter(r => get(r,"名稱") && !/^(否|no|n|x)$/i.test(get(r,"顯示")))
     .map(r => ({ name:get(r,"名稱"), cat:get(r,"分類")||"其他", color:get(r,"顏色"), size:get(r,"尺寸"),
-      price:get(r,"價格").replace(/[^\d]/g,""), ids:driveIds(get(r,"照片連結")), tag:get(r,"標籤"), note:get(r,"備註") }));
+      price:get(r,"價格").replace(/[^\d]/g,""), ids:driveIds(get(r,"照片連結")), tag:get(r,"標籤"), note:get(r,"備註"), brand:get(r,"品牌")||"23區" }));
 }
 
 /* ===== 列表、分類、搜尋 ===== */
@@ -248,11 +272,40 @@ const grid=$("grid"), catSel=$("cat"), qBox=$("q"), countEl=$("count"), clearBtn
 let products = [], shown = [];
 const cardW = () => Math.round(Math.min(grid.clientWidth || 360, 1120) / (innerWidth>=1000?4:innerWidth>=700?3:2) * dpr);
 
+/* ===== 品牌：23區 ／ SELECT（23區以外的品牌都在 SELECT） ===== */
+const MAIN = "23區";
+let group = "all", sub = "";                       // group: all | main | select
+const isMain = p => (p.brand||MAIN) === MAIN;
+const inBrand = p => group==="all" || (group==="main" ? isMain(p) : !isMain(p) && (!sub || p.brand===sub));
+function readHash(){
+  const h = decodeURIComponent(location.hash.slice(1)).toLowerCase();
+  group = h==="23" || h==="23區" ? "main" : h.startsWith("select") ? "select" : "all";
+  sub = group==="select" && h.includes("/") ? decodeURIComponent(location.hash.slice(1)).split("/")[1] : "";
+}
+function drawBrands(){
+  const subs = [...new Set(products.filter(p=>!isMain(p)).map(p=>p.brand))];
+  $("brands").innerHTML = [["all","全部"],["main",MAIN],["select","SELECT"]]
+    .map(([k,t])=>`<button type="button" data-g="${k}" class="${group===k?"on":""}">${t}</button>`).join("");
+  const sb = $("subs");
+  sb.hidden = !(group==="select" && subs.length > 1);
+  sb.innerHTML = sb.hidden ? "" : [["","全部品牌"], ...subs.map(s=>[s,s])]
+    .map(([k,t])=>`<button type="button" data-s="${esc(k)}" class="${sub===k?"on":""}">${esc(t)}</button>`).join("");
+}
+function setGroup(g, s=""){
+  group = g; sub = s;
+  const h = g==="main" ? "#23" : g==="select" ? "#select" + (s ? "/" + encodeURIComponent(s) : "") : " ";
+  history.replaceState(history.state, "", h.trim() ? h : location.pathname + location.search);
+  render(); scrollTo({top:0});
+}
+readHash();
+addEventListener("hashchange", ()=>{ readHash(); if(products.length) render(); });
+
 function render(){
   const cat = catSel.value || "全部";
+  drawBrands();
   const words = qBox.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
   clearBtn.hidden = !qBox.value;
-  shown = products.filter(p => (cat==="全部"||p.cat===cat) && words.every(w => p.name.toLowerCase().includes(w)));
+  shown = products.filter(p => inBrand(p) && (cat==="全部"||p.cat===cat) && words.every(w => p.name.toLowerCase().includes(w)));
   countEl.textContent = products.length ? `共 ${shown.length} 件` : "";
   const w = Math.min(Math.max(cardW(), 300), 800);
   grid.innerHTML = shown.length ? shown.map((p,i)=>`
@@ -261,12 +314,13 @@ function render(){
         ${p.tag?`<span class="tag">${esc(p.tag)}</span>`:""}
         ${p.ids.length>1?`<span class="multi">📷 ${p.ids.length}</span>`:""}</div>
       <div class="info">
+        <div class="brand">${esc(p.brand||"23區")}</div>
         <h3>${esc(p.name)}</h3>
         ${[p.color,p.size].some(Boolean)?`<div class="meta">${[p.color,p.size].filter(Boolean).map(esc).join("｜")}</div>`:""}
         <div class="price">${money(p.price)}</div>
       </div>
     </article>`).join("")
-    : `<p class="empty">${words.length ? "找不到符合的衣服，換個關鍵字試試看" : "這個分類目前沒有展示中的商品"}</p>`;
+    : `<p class="empty">${words.length ? "找不到符合的衣服，換個關鍵字試試看" : (group==="select" ? "SELECT 目前沒有展示中的商品" : "這個分類目前沒有展示中的商品")}</p>`;
 }
 function setup(list){
   const keep = catSel.value;
@@ -280,6 +334,8 @@ catSel.addEventListener("change", ()=>{ render(); scrollTo({top:0}); });
 qBox.addEventListener("input", render);
 qBox.addEventListener("keydown", e=>{ if(e.key==="Enter") qBox.blur(); });   // 按搜尋後收起鍵盤
 clearBtn.addEventListener("click", ()=>{ qBox.value=""; render(); qBox.focus(); });
+$("brands").addEventListener("click", e=>{ const b=e.target.closest("[data-g]"); if(b) setGroup(b.dataset.g); });
+$("subs").addEventListener("click", e=>{ const b=e.target.closest("[data-s]"); if(b) setGroup("select", b.dataset.s); });
 
 /* ===== 商品詳細 ===== */
 const dlg = $("detail");
@@ -319,6 +375,7 @@ function openDetail(i, fromHistory){
   const rows = [["分類",p.cat],["顏色",p.color],["尺寸",p.size]].filter(r=>r[1]);
   dlg.querySelector(".d-info").innerHTML = `
     ${p.tag?`<span class="d-tag">${esc(p.tag)}</span>`:""}
+    <div class="d-brand">${esc(cur.brand||"23區")}</div>
     <h2>${esc(p.name)}</h2>
     <div class="d-price">${money(p.price)}</div>
     <dl>${rows.map(r=>`<dt>${r[0]}</dt><dd>${esc(r[1])}</dd>`).join("")}</dl>
@@ -360,8 +417,8 @@ document.addEventListener("keydown", e=>{
    3. 小幫手在背景再確認一次，有差異就以小幫手為準
    4. 兩個都壞掉時，才讀「發布的試算表」備用                          */
 const CACHE_KEY = "shop-items-v3", CACHE_MAX = 30*60*1000;
-const norm = items => items.map(p=>({...p, cat:p.cat||"其他", price:String(p.price??"").replace(/[^\d]/g,""), ids:p.ids||driveIds((p.imgs||[p.img||""]).join("\n"))}));
-const slim = list => list.map(p=>({name:p.name, cat:p.cat||"其他", color:p.color||"", size:p.size||"", price:String(p.price||""), ids:p.ids, tag:p.tag||"", note:p.note||""}));
+const norm = items => items.map(p=>({...p, brand:p.brand||"23區", cat:p.cat||"其他", price:String(p.price??"").replace(/[^\d]/g,""), ids:p.ids||driveIds((p.imgs||[p.img||""]).join("\n"))}));
+const slim = list => list.map(p=>({brand:p.brand||"23區", name:p.name, cat:p.cat||"其他", color:p.color||"", size:p.size||"", price:String(p.price||""), ids:p.ids, tag:p.tag||"", note:p.note||""}));
 const same = (a,b) => JSON.stringify(slim(a||[])) === JSON.stringify(slim(b||[]));
 const save = list => { try{ localStorage.setItem(CACHE_KEY, JSON.stringify({t:Date.now(), items:slim(list)})); }catch(e){} };
 async function load(){

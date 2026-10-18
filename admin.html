@@ -73,6 +73,9 @@
     <div class="shots" id="shots"></div>
     <p class="hint">可一次選多張。第 1 張是封面；按照片左上角的「◀」可以往前移。</p>
 
+    <label for="brand">放在哪一區</label>
+    <select id="brand"><option>23區</option><option>SELECT</option></select>
+
     <label for="name">名稱 <small>（必填）</small></label>
     <input id="name" required placeholder="例如：針織開襟外套">
 
@@ -171,11 +174,14 @@ $("shots").addEventListener("change", async e=>{
 });
 
 /* ---------- 新增 / 編輯 ---------- */
-let editing = null, items = [];
+let editing = null, items = [], uploading = false;
+/* 上傳中不小心關掉或離開頁面，會先跳出提醒 */
+addEventListener("beforeunload", e=>{ if(uploading){ e.preventDefault(); e.returnValue = ""; } });
+document.addEventListener("error", e=>{ if(e.target.tagName==="IMG") e.target.style.visibility="hidden"; }, true);
 
 function resetForm(){
   editing = null; shots = [];
-  $("form").reset(); $("cat").value = CATS[0];
+  $("form").reset(); $("cat").value = CATS[0]; $("brand").value = "23區";
   $("form").classList.remove("editing");
   $("formTitle").textContent = "新增衣服";
   $("send").textContent = "上傳";
@@ -186,6 +192,7 @@ function resetForm(){
 function startEdit(p){
   editing = p;
   shots = imgsOf(p).map(link=>({link}));
+  $("brand").value = (p.brand && p.brand !== "23區") ? "SELECT" : "23區";
   $("name").value = p.name; $("color").value = p.color||""; $("size").value = p.size||"";
   $("price").value = String(p.price||"").replace(/[^\d]/g,""); $("tag").value = p.tag||""; $("note").value = p.note||"";
   if(p.cat && !CATS.includes(p.cat)) $("cat").insertAdjacentHTML("beforeend", `<option>${esc(p.cat)}</option>`);
@@ -202,7 +209,7 @@ $("cancel").addEventListener("click", ()=>{ resetForm(); say("",true); });
 $("form").addEventListener("submit", async e=>{
   e.preventDefault();
   if(!shots.length && !confirm("沒有照片，確定要儲存嗎？")) return;
-  $("send").disabled = true;
+  $("send").disabled = true; uploading = true;
   try{
     const name = $("name").value.trim();
     const fresh = shots.filter(s=>!s.link);
@@ -214,7 +221,7 @@ $("form").addEventListener("submit", async e=>{
       delete s.data;
     }
     say("儲存資料中…", true);
-    const data = { name, cat:$("cat").value, color:$("color").value.trim(), size:$("size").value.trim(),
+    const data = { name, brand:$("brand").value, cat:$("cat").value, color:$("color").value.trim(), size:$("size").value.trim(),
       price:$("price").value.trim(), tag:$("tag").value, note:$("note").value.trim(), imgs:shots.map(s=>s.link) };
     if(editing) await call({action:"update", row:editing.row, oldName:editing.name, ...data});
     else await call({action:"add", ...data});
@@ -223,7 +230,7 @@ $("form").addEventListener("submit", async e=>{
     say(wasEdit ? "✓ 已儲存修改！" : "✓ 上傳成功！", true);
     if($("list").dataset.loaded) loadList();
   }catch(err){ say("✗ "+err.message+"（已傳好的照片不會重傳，可以直接再按一次）"); }
-  $("send").disabled = false;
+  $("send").disabled = false; uploading = false;
 });
 
 /* ---------- 列表：編輯 / 上下架 / 刪除 ---------- */
@@ -237,7 +244,7 @@ async function loadList(){
       <div class="item ${p.show?"":"off"}">
         <div class="top">
           ${im.length?`<img src="${thumb(im[0])}" alt="" referrerpolicy="no-referrer" loading="lazy">`:`<div class="noimg"></div>`}
-          <div class="t"><b>${esc(p.name)}</b><span>${esc([p.cat,p.price&&("NT$ "+p.price),im.length&&(im.length+" 張照片")].filter(Boolean).join("｜"))}${p.show?"":"｜已下架"}</span></div>
+          <div class="t"><b>${esc(p.name)}</b><span>${esc([p.brand||"23區",p.cat,p.price&&("NT$ "+p.price),im.length&&(im.length+" 張照片")].filter(Boolean).join("｜"))}${p.show?"":"｜已下架"}</span></div>
         </div>
         ${p.note?`<div class="note">備註：${esc(p.note)}</div>`:""}
         <div class="acts">
