@@ -81,6 +81,7 @@
 
     <label for="cat">分類</label>
     <select id="cat"></select>
+    <input id="newCat" hidden maxlength="12" placeholder="輸入新類別，例如：包包、鞋子、皮帶" style="margin-top:8px">
 
     <div class="row">
       <div><label for="color">顏色</label><input id="color" placeholder="米白"></div>
@@ -118,7 +119,33 @@ const driveId = l => { const m=(l||"").match(/\/d\/([\w-]{20,})/)||(l||"").match
 const thumb = (l,w=300) => driveId(l) ? `https://drive.google.com/thumbnail?id=${driveId(l)}&sz=w${w}` : "";
 const imgsOf = p => p.imgs || (p.img ? [p.img] : []);
 
-$("cat").innerHTML = CATS.map(c=>`<option>${c}</option>`).join("");
+/* ---------- 類別：固定的 + 已經用過的 + 自己新增的 ---------- */
+let extraCats = [];
+try{ extraCats = JSON.parse(localStorage.getItem("shop-cats")||"[]"); }catch(e){}
+const allCats = () => [...new Set([...CATS, ...extraCats, ...items.map(p=>p.cat).filter(Boolean)])];
+function fillCats(sel){
+  const cats = allCats();
+  if(sel && !cats.includes(sel)) cats.push(sel);
+  $("cat").innerHTML = cats.map(c=>`<option>${esc(c)}</option>`).join("") + `<option value="__new">＋ 新增類別…</option>`;
+  $("cat").value = sel || CATS[0];
+  $("newCat").hidden = true; $("newCat").value = "";
+}
+function rememberCat(c){
+  if(!c || CATS.includes(c) || extraCats.includes(c)) return;
+  extraCats.push(c); try{ localStorage.setItem("shop-cats", JSON.stringify(extraCats)); }catch(e){}
+}
+$("cat").addEventListener("change", ()=>{
+  const isNew = $("cat").value === "__new";
+  $("newCat").hidden = !isNew;
+  if(isNew) $("newCat").focus();
+});
+function pickedCat(){ return $("cat").value === "__new" ? $("newCat").value.trim() : $("cat").value; }
+/* 打開頁面就先抓網站上已經有的類別（不用密碼） */
+if(URL_) fetch(URL_).then(r=>r.json()).then(d=>{
+  if(!d.ok) return;
+  d.items.forEach(p=>rememberCat(p.cat));
+  if(!editing && $("cat").value !== "__new") fillCats($("cat").value);
+}).catch(()=>{});
 try{ $("pw").value = localStorage.getItem("shop-pw")||""; }catch(e){}
 $("pw").addEventListener("change",()=>{ try{ localStorage.setItem("shop-pw",$("pw").value); }catch(e){} });
 
@@ -181,7 +208,7 @@ document.addEventListener("error", e=>{ if(e.target.tagName==="IMG") e.target.st
 
 function resetForm(){
   editing = null; shots = [];
-  $("form").reset(); $("cat").value = CATS[0]; $("brand").value = "23區";
+  $("form").reset(); fillCats(CATS[0]); $("brand").value = "23區";
   $("form").classList.remove("editing");
   $("formTitle").textContent = "新增衣服";
   $("send").textContent = "上傳";
@@ -195,8 +222,7 @@ function startEdit(p){
   $("brand").value = (p.brand && p.brand !== "23區") ? "SELECT" : "23區";
   $("name").value = p.name; $("color").value = p.color||""; $("size").value = p.size||"";
   $("price").value = String(p.price||"").replace(/[^\d]/g,""); $("tag").value = p.tag||""; $("note").value = p.note||"";
-  if(p.cat && !CATS.includes(p.cat)) $("cat").insertAdjacentHTML("beforeend", `<option>${esc(p.cat)}</option>`);
-  $("cat").value = p.cat || CATS[0];
+  fillCats(p.cat || CATS[0]);
   $("form").classList.add("editing");
   $("formTitle").textContent = "編輯：" + p.name;
   $("send").textContent = "儲存修改";
@@ -208,6 +234,8 @@ $("cancel").addEventListener("click", ()=>{ resetForm(); say("",true); });
 
 $("form").addEventListener("submit", async e=>{
   e.preventDefault();
+  const cat = pickedCat();
+  if(!cat){ say("請輸入新類別的名稱"); $("newCat").focus(); return; }
   if(!shots.length && !confirm("沒有照片，確定要儲存嗎？")) return;
   $("send").disabled = true; uploading = true;
   try{
@@ -221,10 +249,11 @@ $("form").addEventListener("submit", async e=>{
       delete s.data;
     }
     say("儲存資料中…", true);
-    const data = { name, brand:$("brand").value, cat:$("cat").value, color:$("color").value.trim(), size:$("size").value.trim(),
+    const data = { name, brand:$("brand").value, cat, color:$("color").value.trim(), size:$("size").value.trim(),
       price:$("price").value.trim(), tag:$("tag").value, note:$("note").value.trim(), imgs:shots.map(s=>s.link) };
     if(editing) await call({action:"update", row:editing.row, oldName:editing.name, ...data});
     else await call({action:"add", ...data});
+    rememberCat(cat);
     const wasEdit = !!editing;
     resetForm();
     say(wasEdit ? "✓ 已儲存修改！" : "✓ 上傳成功！", true);
@@ -238,6 +267,7 @@ async function loadList(){
   const box=$("list"); box.dataset.loaded=1; box.innerHTML="<p class='sub'>載入中…</p>";
   try{
     items = (await call({action:"list"})).items;
+    if(!editing && $("cat").value !== "__new") fillCats($("cat").value);
     box.innerHTML = items.length ? items.map((p,i)=>({p,i})).reverse().map(({p,i})=>{
       const im = imgsOf(p);
       return `
