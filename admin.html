@@ -2,8 +2,13 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
+<!-- 安全設定：只允許本網站和 Google；不能被別的網站用框框嵌入（防止騙點擊） -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://drive.google.com https://drive.usercontent.google.com https://*.googleusercontent.com; connect-src https://script.google.com https://docs.google.com https://*.googleusercontent.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<script>if (window.top !== window.self) { document.documentElement.style.display = "none"; window.top.location = window.self.location; }</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
+<meta name="robots" content="noindex,nofollow">
+<meta name="color-scheme" content="only light">
 <title>商品管理｜台中LaLaport23區</title>
 <style>
   :root{--bg:#f7f3ec;--paper:#fffdf9;--ink:#2b2622;--muted:#6f655c;--navy:#2f3a4f;--camel:#a8794a;--line:#e3dacd;--ok:#2e7d4f;--bad:#b23b3b}
@@ -14,7 +19,7 @@
   .sub{color:var(--muted);font-size:16px;margin-bottom:20px}
   .box{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:20px}
   .box.editing{border:2px solid var(--camel)}
-  h2{font-size:21px;margin-bottom:14px}
+  h2{font-size:21px;margin-bottom:14px;overflow-wrap:anywhere}
   label{display:block;font-weight:600;margin:14px 0 6px}
   label small,.lbl small{font-weight:400;color:var(--muted)}
   .lbl{font-weight:600;margin:0 0 8px;display:flex;justify-content:space-between;align-items:baseline}
@@ -33,6 +38,9 @@
   .shot{position:relative;aspect-ratio:3/4;border-radius:8px;overflow:hidden;background:#eee8df}
   .shot img{width:100%;height:100%;object-fit:cover;display:block}
   .shot .x{position:absolute;top:4px;right:4px;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:16px;line-height:32px;padding:0}
+  .shot .st{position:absolute;right:4px;bottom:24px;font-size:12px;padding:1px 8px;border-radius:999px;background:rgba(0,0,0,.6);color:#fff}
+  .shot .st.ok{background:rgba(46,125,79,.9)} .shot .st.err{background:rgba(178,59,59,.92)}
+  form.saving .shots, form.saving #cancel, form.saving select, form.saving input, form.saving textarea{pointer-events:none;opacity:.6}
   .shot .cover{position:absolute;left:0;right:0;bottom:0;background:rgba(168,121,74,.92);color:#fff;font-size:13px;text-align:center;padding:2px 0}
   .shot .mv{position:absolute;left:4px;top:4px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.9);color:var(--ink);font-size:15px;padding:0}
   .add{aspect-ratio:3/4;border:2px dashed #cfc4b4;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);font-size:15px;cursor:pointer;background:#fff;text-align:center}
@@ -47,7 +55,7 @@
   .item .t{flex:1;min-width:0}
   .item .t b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .item .t span{font-size:15px;color:var(--muted)}
-  .item .note{font-size:15px;color:var(--muted);margin-top:6px;white-space:pre-line}
+  .item .note{font-size:15px;color:var(--muted);margin-top:6px;white-space:pre-line;overflow-wrap:anywhere}
   .acts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
   .acts button{padding:10px 6px;font-size:16px;background:#eee8df;color:var(--ink)}
   .acts .del{background:#f6e3e3;color:var(--bad)}
@@ -66,11 +74,20 @@
     <input id="pw" type="password" autocomplete="current-password" placeholder="輸入密碼">
   </div>
 
+  <div class="box">
+    <h2>首頁活動訊息</h2>
+    <p class="sub" style="margin-bottom:8px">會顯示在顧客網頁最上面。清空後按儲存就不顯示。</p>
+    <textarea id="notice" maxlength="500" placeholder="例如：週年慶全館 8 折　10/30～11/5"></textarea>
+    <button class="big" id="saveNotice" type="button" style="margin-top:12px">儲存活動訊息</button>
+    <div class="msg" id="noticeMsg"></div>
+  </div>
+
   <form class="box" id="form">
     <h2 id="formTitle">新增衣服</h2>
 
     <div class="lbl">照片 <small id="count">0 / 15 張</small></div>
     <div class="shots" id="shots"></div>
+    <input type="file" id="file" accept="image/*" multiple style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" tabindex="-1" aria-hidden="true">
     <p class="hint">可一次選多張。第 1 張是封面；按照片左上角的「◀」可以往前移。</p>
 
     <label for="brand">放在哪一區</label>
@@ -143,20 +160,43 @@ function pickedCat(){ return $("cat").value === "__new" ? $("newCat").value.trim
 /* 打開頁面就先抓網站上已經有的類別（不用密碼） */
 if(URL_) fetch(URL_).then(r=>r.json()).then(d=>{
   if(!d.ok) return;
+  if(!$("notice").value && !noticeTouched) $("notice").value = d.notice || "";
   d.items.forEach(p=>rememberCat(p.cat));
   if(!editing && $("cat").value !== "__new") fillCats($("cat").value);
 }).catch(()=>{});
+/* ---------- 活動訊息 ---------- */
+let noticeTouched = false;
+$("notice").addEventListener("input", ()=>{ noticeTouched = true; });
+$("saveNotice").addEventListener("click", async ()=>{
+  const b = $("saveNotice"), m = $("noticeMsg");
+  b.disabled = true; m.className = "msg ok"; m.textContent = "儲存中…";
+  try{
+    await call({action:"notice", text:$("notice").value});
+    try{ localStorage.removeItem("shop-notice"); }catch(e){}
+    m.textContent = $("notice").value.trim() ? "✓ 已更新，顧客網頁重新整理就會看到" : "✓ 已清除，首頁不會顯示活動訊息";
+  }catch(err){ m.className = "msg bad"; m.textContent = "✗ " + err.message; }
+  b.disabled = false;
+});
 try{ $("pw").value = localStorage.getItem("shop-pw")||""; }catch(e){}
 $("pw").addEventListener("change",()=>{ try{ localStorage.setItem("shop-pw",$("pw").value); }catch(e){} });
 
 function say(text, ok){ const m=$("msg"); m.textContent=text; m.className="msg "+(ok?"ok":"bad"); }
 
+let pwBad = false;                                           // 密碼錯了就先停，避免一直試被鎖住
 async function call(payload){
   if(!URL_) throw new Error("還沒設定 SCRIPT_URL（config.js）");
   if(!$("pw").value) throw new Error("請先在最上面輸入管理密碼");
-  const res = await fetch(URL_, {method:"POST", body:JSON.stringify({...payload, password:$("pw").value})});
-  const data = await res.json();
-  if(!data.ok) throw new Error(data.error||"發生錯誤");
+  const ctrl = new AbortController(), timer = setTimeout(()=>ctrl.abort(), 90000);
+  let res;
+  try{ res = await fetch(URL_, {method:"POST", body:JSON.stringify({...payload, password:$("pw").value}), signal:ctrl.signal}); }
+  catch(err){ throw new Error(err.name==="AbortError" ? "等太久沒有回應，請再試一次" : "網路連線失敗，請確認網路後再試一次"); }
+  finally{ clearTimeout(timer); }
+  let data;
+  try{ data = await res.json(); }catch(err){ throw new Error("系統忙碌，請再試一次"); }
+  if(!data.ok){
+    if(/密碼/.test(data.error||"")) pwBad = true;
+    throw new Error(data.error||"發生錯誤");
+  }
   if(payload.action!=="list" && payload.action!=="photo"){       // 有改資料 → 清掉顧客頁在這支手機的暫存
     try{ localStorage.removeItem("shop-items-v3"); localStorage.removeItem("shop-items-v2"); }catch(e){}
   }
@@ -164,40 +204,118 @@ async function call(payload){
 }
 
 /* ---------- 照片：shots 裡每張是 {link} (已上傳) 或 {data, src} (新的) ---------- */
-let shots = [];
+let shots = [], nextId = 1;
+let processing = 0, session = 0, reqId = "";                     // 處理中的照片數、表單版本、這次新增的編號
+/* ---------- 選好照片就在背景先上傳（同時傳 3 張），填資料的時候照片已經在傳了 ---------- */
+const PARALLEL = 4;
+let warned = false;
+const badge = s => s.st==="up" ? `<span class="st">上傳中</span>` : s.st==="wait" ? `<span class="st">等待中</span>`
+  : s.st==="err" ? `<span class="st err">失敗</span>` : s.st==="ok" ? `<span class="st ok">✓</span>` : "";
+function setBadge(s){
+  const el = document.querySelector(`.shot[data-id="${s.id}"]`); if(!el) return;
+  const old = el.querySelector(".st"); if(old) old.remove();
+  el.insertAdjacentHTML("beforeend", badge(s));
+}
+const busy = () => shots.some(s=>s.st==="up"||s.st==="wait");
+function pump(){
+  if(!$("pw").value || !URL_ || pwBad) return;              // 還沒輸入密碼、或密碼錯了就先等
+  let running = shots.filter(s=>s.st==="up").length;
+  for(const s of shots){
+    if(running >= PARALLEL) break;
+    if(s.st!=="wait") continue;
+    running++; s.st = "up"; setBadge(s);
+    s.p = call({action:"photo", name:$("name").value.trim()||"商品照片", image:s.data})
+      .then(d=>{ s.link = d.link; delete s.data; s.st = "ok";
+        if(d.warn && !warned){ warned = true; alert("照片已上傳，但無法設成公開，客人可能看不到。\n請到雲端硬碟把「服飾店照片」資料夾設成「知道連結的任何人」。"); } })
+      .catch(err=>{ s.st = "err"; s.error = err.message; if(pwBad) say("✗ " + err.message + (/太多次/.test(err.message) ? "" : "，請確認最上面的密碼")); })
+      .finally(()=>{ setBadge(s); uploading = busy() || $("send").disabled; pump(); });
+  }
+  uploading = busy() || $("send").disabled;
+}
+let pwTimer;
+$("pw").addEventListener("input", ()=>{                        // 打完密碼停 0.8 秒才開始傳，不會打一半就送出
+  pwBad = false; clearTimeout(pwTimer);
+  pwTimer = setTimeout(()=>{ shots.forEach(s=>{ if(s.st==="err"){ s.st="wait"; setBadge(s); } }); pump(); }, 800);
+});
+async function allUploaded(list){
+  if(!URL_) throw new Error("還沒設定 SCRIPT_URL（config.js）");
+  if(!$("pw").value) throw new Error("請先在最上面輸入管理密碼");
+  pwBad = false;                                              // 每次按上傳都重新試一次密碼
+  list.forEach(s=>{ if(s.st==="err"){ s.st="wait"; setBadge(s); } });   // 失敗的再試一次
+  pump();
+  while(list.some(s=>s.st==="up"||s.st==="wait")){
+    if(pwBad) throw new Error("密碼錯誤，請確認最上面的密碼");
+    const done = list.filter(s=>s.link).length;
+    say(`照片上傳中… ${done} / ${list.length}`, true);
+    await Promise.race(list.filter(s=>s.st==="up").map(s=>s.p).concat(new Promise(r=>setTimeout(r,500))));
+    pump();
+  }
+  if(pwBad) throw new Error("密碼錯誤，請確認最上面的密碼");
+  const bad = list.find(s=>!s.link);
+  if(bad) throw new Error("有照片上傳失敗：" + (bad.error||"請再按一次") );
+}
+/* 這次新傳、但最後沒用到的照片 → 從雲端硬碟刪掉（原本就在商品上的照片不動） */
+let savingList = [];
+function discard(list){
+  list = list.filter(s=>!savingList.includes(s));               // 正在儲存的照片絕對不丟
+  const ids = list.filter(s=>s && s.fresh).map(s=>{ s.dropped = true; return s.link; }).filter(Boolean);
+  list.forEach(s=>{ if(s && s.fresh && !s.link && s.p) s.p.then(()=>{ if(s.link) call({action:"discard", imgs:[s.link]}).catch(()=>{}); }); });
+  if(ids.length) call({action:"discard", imgs:ids}).catch(()=>{});
+}
 function drawShots(){
   $("count").textContent = `${shots.length} / ${MAX} 張`;
   $("shots").innerHTML = shots.map((s,i)=>`
-    <div class="shot">
+    <div class="shot" data-id="${s.id}">
       <img src="${esc(s.src || thumb(s.link,400))}" alt="" referrerpolicy="no-referrer">
+      ${badge(s)}
       ${i>0?`<button type="button" class="mv" data-mv="${i}" aria-label="往前移">◀</button>`:""}
       <button type="button" class="x" data-x="${i}" aria-label="移除">✕</button>
       ${i===0?`<div class="cover">封面</div>`:""}
     </div>`).join("") + (shots.length<MAX ? `
-    <label class="add"><b>＋</b>拍照／選照片<input type="file" id="file" accept="image/*" multiple></label>` : "");
+    <label class="add" for="file"><b>＋</b>拍照／選照片</label>` : "");
 }
 $("shots").addEventListener("click", e=>{
+  if(saving) return;
   const x=e.target.closest("[data-x]"), mv=e.target.closest("[data-mv]");
-  if(x){ shots.splice(+x.dataset.x,1); drawShots(); }
+  if(x){ const [gone] = shots.splice(+x.dataset.x,1); discard([gone]); drawShots(); }
   if(mv){ const i=+mv.dataset.mv; [shots[i-1],shots[i]]=[shots[i],shots[i-1]]; drawShots(); }
 });
-$("shots").addEventListener("change", async e=>{
-  if(e.target.id!=="file") return;
+/* 照片縮小到最長邊 1080px（手機看夠清楚，檔案小、傳得快） */
+async function shrink(file){
+  const url = URL.createObjectURL(file);
+  try{
+    const img = await new Promise((ok,no)=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=no; i.src=url; });
+    const k = Math.min(1, 1080/Math.max(img.naturalWidth,img.naturalHeight));
+    const c = document.createElement("canvas"); c.width=Math.round(img.naturalWidth*k); c.height=Math.round(img.naturalHeight*k);
+    c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+    const blob = await new Promise(r=>c.toBlob(r,"image/jpeg",0.8));
+    if(!blob) throw new Error("encode");
+    c.width = c.height = 0;                                     // 釋放記憶體（iPhone 一次選很多張才不會當掉）
+    return await new Promise((ok,no)=>{ const fr=new FileReader(); fr.onload=()=>ok(fr.result); fr.onerror=no; fr.readAsDataURL(blob); });
+  } finally { URL.revokeObjectURL(url); }
+}
+$("file").addEventListener("change", async e=>{
+  if(saving){ e.target.value = ""; return; }
   const files=[...e.target.files];
-  const room = MAX - shots.length;
+  const room = Math.max(0, MAX - shots.length - processing);   // 還在處理的也算進去，不會超過 15 張
   if(files.length > room) alert(`最多 ${MAX} 張，這次只會加入前 ${room} 張。`);
+  e.target.value = "";
   say("照片處理中…", true);
-  for(const f of files.slice(0,room)){
+  let bad = 0; const mySession = session;
+  processing += Math.min(files.length, room);
+  for(const f of files.slice(0,room)){                         // 處理好一張就馬上開始傳那一張
     try{
-      const img = await new Promise((ok,no)=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=no; i.src=URL.createObjectURL(f); });
-      const k = Math.min(1, 1200/Math.max(img.width,img.height));
-      const c = document.createElement("canvas"); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k);
-      c.getContext("2d").drawImage(img,0,0,c.width,c.height);
-      const src = c.toDataURL("image/jpeg",0.82);
-      shots.push({src, data:src.split(",")[1]});
-    }catch(err){}
+      const src = await shrink(f);
+      if(mySession !== session) continue;                      // 中途換了別件或取消，就不要放進新的表單
+      shots.push({id:nextId++, src, data:src.split(",")[1], st:"wait", fresh:true});
+      drawShots(); pump();
+    }catch(err){ bad++; }
+    finally{ processing--; }
   }
-  say("", true); drawShots();
+  if(mySession !== session) return;
+  if(bad) say(`有 ${bad} 張照片讀不到，請換一張`);
+  else if(pwBad) say("✗ 密碼錯誤，請確認最上面的密碼");
+  else say($("pw").value ? "" : "輸入密碼後照片就會開始上傳", true);
 });
 
 /* ---------- 新增 / 編輯 ---------- */
@@ -206,7 +324,10 @@ let editing = null, items = [], uploading = false;
 addEventListener("beforeunload", e=>{ if(uploading){ e.preventDefault(); e.returnValue = ""; } });
 document.addEventListener("error", e=>{ if(e.target.tagName==="IMG") e.target.style.visibility="hidden"; }, true);
 
-function resetForm(){
+function newReq(){ return "r" + Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+function resetForm(saved){
+  if(!saved) discard(shots);
+  session++; reqId = newReq();
   editing = null; shots = [];
   $("form").reset(); fillCats(CATS[0]); $("brand").value = "23區";
   $("form").classList.remove("editing");
@@ -217,8 +338,10 @@ function resetForm(){
 }
 
 function startEdit(p){
+  discard(shots);
+  session++;
   editing = p;
-  shots = imgsOf(p).map(link=>({link}));
+  shots = imgsOf(p).map(link=>({id:nextId++, link}));
   $("brand").value = (p.brand && p.brand !== "23區") ? "SELECT" : "23區";
   $("name").value = p.name; $("color").value = p.color||""; $("size").value = p.size||"";
   $("price").value = String(p.price||"").replace(/[^\d]/g,""); $("tag").value = p.tag||""; $("note").value = p.note||"";
@@ -230,43 +353,46 @@ function startEdit(p){
   drawShots(); say("", true);
   $("form").scrollIntoView({behavior:"smooth"});
 }
-$("cancel").addEventListener("click", ()=>{ resetForm(); say("",true); });
+$("cancel").addEventListener("click", ()=>{ if(saving) return; resetForm(); say("",true); });
 
+let saving = false;
 $("form").addEventListener("submit", async e=>{
   e.preventDefault();
+  if(saving) return;
   const cat = pickedCat();
   if(!cat){ say("請輸入新類別的名稱"); $("newCat").focus(); return; }
+  if(processing > 0){ say("照片還在處理中，請等照片都出現後再按一次", true); return; }
   if(!shots.length && !confirm("沒有照片，確定要儲存嗎？")) return;
-  $("send").disabled = true; uploading = true;
+  /* 按下去的那一刻就把所有內容記下來，儲存途中畫面怎麼變都不影響 */
+  const target = editing, list = shots.slice();
+  const data = { name:$("name").value.trim(), brand:$("brand").value, cat, color:$("color").value.trim(), size:$("size").value.trim(),
+    price:$("price").value.trim(), tag:$("tag").value, note:$("note").value.trim() };
+  savingList = list;
+  saving = true; $("send").disabled = true; $("form").classList.add("saving"); uploading = true;
   try{
-    const name = $("name").value.trim();
-    const fresh = shots.filter(s=>!s.link);
-    let n = 0;
-    for(const s of shots){                       // 新照片一張一張傳
-      if(s.link) continue;
-      n++; say(`上傳照片中… ${n} / ${fresh.length}`, true);
-      s.link = (await call({action:"photo", name, image:s.data})).link;
-      delete s.data;
-    }
+    await allUploaded(list);
     say("儲存資料中…", true);
-    const data = { name, brand:$("brand").value, cat, color:$("color").value.trim(), size:$("size").value.trim(),
-      price:$("price").value.trim(), tag:$("tag").value, note:$("note").value.trim(), imgs:shots.map(s=>s.link) };
-    if(editing) await call({action:"update", row:editing.row, oldName:editing.name, ...data});
-    else await call({action:"add", ...data});
+    data.imgs = list.map(s=>s.link);
+    if(target) await call({action:"update", id:target.id, row:target.row, oldName:target.name, ...data});
+    else await call({action:"add", reqId, ...data});             // 同一個編號重送也只會新增一次
     rememberCat(cat);
-    const wasEdit = !!editing;
-    resetForm();
-    say(wasEdit ? "✓ 已儲存修改！" : "✓ 上傳成功！", true);
+    resetForm(true);
+    say(target ? "✓ 已儲存修改！" : "✓ 上傳成功！", true);
     if($("list").dataset.loaded) loadList();
   }catch(err){ say("✗ "+err.message+"（已傳好的照片不會重傳，可以直接再按一次）"); }
-  $("send").disabled = false; uploading = false;
+  savingList = [];
+  saving = false; $("send").disabled = false; $("form").classList.remove("saving"); uploading = busy();
 });
 
 /* ---------- 列表：編輯 / 上下架 / 刪除 ---------- */
+let listReq = 0;
 async function loadList(){
   const box=$("list"); box.dataset.loaded=1; box.innerHTML="<p class='sub'>載入中…</p>";
+  const my = ++listReq;
   try{
-    items = (await call({action:"list"})).items;
+    const got = (await call({action:"list"})).items;
+    if(my !== listReq) return;                                   // 有更新的請求了，舊的結果不要用
+    items = got;
     if(!editing && $("cat").value !== "__new") fillCats($("cat").value);
     box.innerHTML = items.length ? items.map((p,i)=>({p,i})).reverse().map(({p,i})=>{
       const im = imgsOf(p);
@@ -290,12 +416,13 @@ $("list").addEventListener("click", async e=>{
   if(b.id==="loadList"){ loadList(); return; }
   const p = items[+b.dataset.i]; if(!p) return;
   const act = b.dataset.act;
+  if(saving){ alert("正在儲存，請等上方顯示「成功」後再操作"); return; }
   if(act==="edit"){ startEdit(p); return; }
   if(act==="delete" && !confirm(`確定要刪除「${p.name}」嗎？\n照片也會一起刪除，刪了就不能復原。\n（只想暫時不顯示的話，請用「下架」）`)) return;
   const label=b.textContent; b.disabled=true; b.textContent="處理中…";
   try{
-    if(act==="show") await call({action:"show", row:p.row, oldName:p.name, show:!p.show});
-    if(act==="delete"){ await call({action:"delete", row:p.row, oldName:p.name}); if(editing && editing.row===p.row) resetForm(); }
+    if(act==="show") await call({action:"show", id:p.id, row:p.row, oldName:p.name, show:!p.show});
+    if(act==="delete"){ await call({action:"delete", id:p.id, row:p.row, oldName:p.name}); if(editing && editing.id===p.id) resetForm(); }
     loadList();
   }catch(err){ alert(err.message); b.disabled=false; b.textContent=label; }
 });
