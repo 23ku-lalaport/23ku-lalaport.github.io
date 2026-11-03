@@ -288,7 +288,7 @@ function fromSheet(rows){
   return rows.slice(1)
     .filter(r => get(r,"名稱") && !/^(否|no|n|x)$/i.test(get(r,"顯示")))
     .map(r => ({ name:get(r,"名稱"), cat:get(r,"分類")||"其他", color:get(r,"顏色"), size:get(r,"尺寸"),
-      price:priceOf(get(r,"價格")), ids:driveIds(get(r,"照片連結")), tag:get(r,"標籤"), note:get(r,"備註"), brand:get(r,"品牌")||"23區" }));
+      price:priceOf(get(r,"價格")), ids:driveIds(get(r,"照片連結")), tag:get(r,"標籤"), newAt:get(r,"新品日期"), note:get(r,"備註"), brand:get(r,"品牌")||"23區" }));
 }
 
 /* ===== 列表、分類、搜尋 ===== */
@@ -361,9 +361,13 @@ function render(){
   if(empty){ empty.hidden = n > 0;
     empty.textContent = words.length ? "找不到符合的衣服，換個關鍵字試試看" : (group==="select" ? "SELECT 目前沒有展示中的商品" : "這個分類目前沒有展示中的商品"); }
 }
+/* 「新品」標籤 7 天後自動不顯示（其他標籤不受影響） */
+const NEW_DAYS = 7;
+const liveTag = p => { if(p.tag !== "新品" || !p.newAt) return p.tag;
+  const t = Date.parse(p.newAt); return isFinite(t) && Date.now() - t > NEW_DAYS*86400000 ? "" : p.tag; };
 function setup(list){
   const keep = catSel.value;
-  products = list.slice().reverse();                 // 新上傳的排在最前面（試算表最下面的列 = 最新）
+  products = list.slice().reverse().map(p=>({...p, tag: liveTag(p)}));                 // 新上傳的排在最前面（試算表最下面的列 = 最新）
   const cats = ["全部", ...CATS, ...[...new Set(products.map(p=>p.cat))].filter(c=>!CATS.includes(c))];
   catSel.innerHTML = cats.map(c=>`<option>${esc(c)}</option>`).join("");
   if(keep && cats.includes(keep)) catSel.value = keep;
