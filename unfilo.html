@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<!-- 安全設定：只允許載入這個網站自己的圖片和程式 -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f7f3ec">
+<meta name="color-scheme" content="only light">
+<meta name="format-detection" content="telephone=no">
+<title>UNFILO｜台中LaLaport23區</title>
+<meta name="description" content="台中LaLaport23區 UNFILO 本季商品，歡迎到專櫃試穿。">
+<meta property="og:title" content="UNFILO｜台中LaLaport23區">
+<meta property="og:description" content="UNFILO 本季針織、上衣、外套、洋裝，歡迎到專櫃試穿。">
+<meta property="og:image" content="unfilo-5.jpg">
+<style>
+  :root{
+    --bg:#f7f3ec; --paper:#fffdf9; --ink:#2b2622; --muted:#6f655c;
+    --navy:#2f3a4f; --camel:#a8794a; --line:#e3dacd;
+    --serif:"Noto Serif TC","Songti TC","PMingLiU",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+    --sl:env(safe-area-inset-left,0px); --sr:env(safe-area-inset-right,0px);
+    --st:env(safe-area-inset-top,0px);  --sb:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;
+       -webkit-tap-highlight-color:transparent;overflow-x:hidden}
+  img{display:block;max-width:100%}
+  button{font:inherit;color:inherit}
+  .wrap{width:100%;max-width:1120px;margin:0 auto;padding-left:calc(14px + var(--sl));padding-right:calc(14px + var(--sr))}
+
+  header{padding-top:calc(14px + var(--st));padding-bottom:6px}
+  .shop{font-family:var(--serif);font-size:15px;color:var(--muted);letter-spacing:.08em;text-decoration:none}
+  h1{font-family:var(--serif);font-size:30px;letter-spacing:.14em;font-weight:700;margin-top:2px}
+  .sub{font-size:14px;color:var(--muted)}
+  .count{font-size:13px;color:var(--muted);margin:14px 0 8px}
+
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-gap:12px 10px;gap:12px 10px}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:4px;overflow:hidden;cursor:pointer;text-align:left;width:100%;display:block}
+  .pic{position:relative;height:0;padding-top:133.33%;background:#eee8df;overflow:hidden}
+  .pic img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover}
+  .multi{position:absolute;right:6px;bottom:6px;background:rgba(43,38,34,.72);color:#fff;font-size:12px;padding:1px 7px;border-radius:10px}
+  .info{padding:9px 10px 12px}
+  .brand{font-size:11px;letter-spacing:.18em;color:var(--muted)}
+  .card h3{font-size:15px;font-weight:600;line-height:1.4;margin:2px 0 3px;word-break:break-word}
+  .meta{font-size:12.5px;color:var(--muted);line-height:1.45;word-break:break-word}
+  .price{font-size:16px;font-weight:700;color:var(--navy);margin-top:4px}
+
+  .more{display:block;margin:26px auto 8px;max-width:420px;text-align:center;padding:13px 16px;border:1px solid var(--navy);
+        color:var(--navy);text-decoration:none;border-radius:4px;font-size:15px;background:var(--paper)}
+  footer{text-align:center;font-size:12px;color:var(--muted);padding:18px 0 calc(24px + var(--sb))}
+
+  /* ===== 商品詳細 ===== */
+  .detail{position:fixed;top:0;right:0;bottom:0;left:0;z-index:50;background:var(--paper);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+  .detail[hidden]{display:none}
+  .d-in{max-width:760px;margin:0 auto;padding-bottom:calc(24px + var(--sb))}
+  .d-close{position:fixed;top:calc(10px + var(--st));right:calc(10px + var(--sr));z-index:3;width:44px;height:44px;border:0;border-radius:50%;
+           background:rgba(255,255,255,.92);font-size:24px;line-height:44px;box-shadow:0 1px 6px rgba(0,0,0,.18);cursor:pointer}
+  .d-pics{background:#eee8df}
+  .d-pics img{width:100%;height:auto;margin:0 auto;max-width:760px}
+  .d-pics img + img{margin-top:6px}
+  .d-info{padding:18px 18px 0}
+  .d-brand{font-size:12px;letter-spacing:.2em;color:var(--muted)}
+  .d-info h2{font-family:var(--serif);font-size:22px;line-height:1.4;margin:2px 0 4px}
+  .d-price{font-size:22px;font-weight:700;color:var(--navy)}
+  .d-info dl{border-top:1px solid var(--line);margin-top:14px;padding-top:14px;display:table;width:100%}
+  .row{display:table-row}
+  .d-info dt,.d-info dd{display:table-cell;padding:4px 0;vertical-align:top}
+  .d-info dt{color:var(--muted);white-space:nowrap;padding-right:16px;width:1%}
+  .d-note{font-size:13px;color:var(--muted);margin-top:16px}
+  .d-back{display:block;width:100%;margin-top:18px;padding:13px;border:1px solid var(--navy);background:var(--navy);color:#fff;border-radius:4px;font-size:16px;cursor:pointer}
+
+  @media (min-width:700px){
+    .grid{grid-template-columns:repeat(3,minmax(0,1fr));grid-gap:24px 18px;gap:24px 18px}
+    h1{font-size:36px}
+  }
+  @media (min-width:1000px){ .grid{grid-template-columns:repeat(4,minmax(0,1fr))} }
+</style>
+</head>
+<body>
+<header class="wrap">
+  <a class="shop" href="./">台中LaLaport23區</a>
+  <h1>UNFILO</h1>
+  <p class="sub">本季精選・點圖片看大圖</p>
+</header>
+<main class="wrap">
+  <p class="count" id="count"></p>
+  <div class="grid" id="grid"></div>
+  <a class="more" href="./">看全部商品 →</a>
+</main>
+<footer>© <span id="yr"></span> 台中LaLaport23區</footer>
+
+<div id="detail" class="detail" hidden role="dialog" aria-modal="true" aria-label="商品詳細">
+  <button class="d-close" type="button" aria-label="關閉">✕</button>
+  <div class="d-in"><div class="d-pics"></div><div class="d-info"></div></div>
+</div>
+
+<script>
+/* ===== 商品資料（要改內容就改這裡）=====
+   pics：照片檔名（同一件可以放好幾張）；color／size／note 可以留空 "" */
+var ITEMS = [
+  {name:"V領毛絨背心",           code:"UF6BKR0323", price:3280, color:"可可棕、米白、灰色", size:"S、M", note:"",                  pics:["unfilo-1.jpg"]},
+  {name:"袖口蕾絲上衣",           code:"UF6BKK0452", price:2480, color:"黑色",               size:"S、M", note:"棉60%・袖口蕾絲設計", pics:["unfilo-2.jpg"]},
+  {name:"鏤空鉤織開襟上衣",       code:"UF6BKK0352", price:2980, color:"咖啡色、黑色",       size:"S、M", note:"棉100%・有彈性",      pics:["unfilo-3.jpg"]},
+  {name:"刺繡袖口抓皺上衣",       code:"UF6BBL0302", price:3880, color:"白色",               size:"S",    note:"棉60%",              pics:["unfilo-4.jpg"]},
+  {name:"珍珠釦V領開襟針織外套",  code:"UF6BKR0325", price:3880, color:"米色",               size:"S、M", note:"全彈性",              pics:["unfilo-5.jpg"]},
+  {name:"V領開襟針織外套",        code:"UF6BKR0325", price:3880, color:"可可棕色",           size:"S、M", note:"全彈性・挺版",        pics:["unfilo-6.jpg"]},
+  {name:"領口蕾絲拼接V領針織衫",  code:"UF6BKR0322", price:3880, color:"米白、鐵灰色",       size:"S、M", note:"領口蕾絲拼接",        pics:["unfilo-7.jpg"]},
+  {name:"POLO領針織洋裝",         code:"UF6BOP0320", price:5680, color:"咖啡色、灰色",       size:"S、M", note:"全彈性・手袖撞色設計", pics:["unfilo-8.jpg"]}
+];
+
+var $ = function(id){ return document.getElementById(id); };
+var esc = function(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); };
+var money = function(n){ return n ? "NT$ " + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "價格請洽專櫃"; };
+
+$("yr").textContent = new Date().getFullYear();
+$("count").textContent = "共 " + ITEMS.length + " 件";
+$("grid").innerHTML = ITEMS.map(function(p, i){
+  var meta = [p.color, p.size].filter(Boolean).map(esc).join("｜");
+  return '<button class="card" type="button" data-i="' + i + '" aria-label="查看 ' + esc(p.name) + '">' +
+    '<div class="pic"><img src="' + esc(p.pics[0]) + '" alt="' + esc(p.name) + '"' + (i > 3 ? ' loading="lazy"' : '') + ' decoding="async">' +
+    (p.pics.length > 1 ? '<span class="multi">📷 ' + p.pics.length + '</span>' : '') + '</div>' +
+    '<div class="info"><div class="brand">UNFILO</div><h3>' + esc(p.name) + '</h3>' +
+    (meta ? '<div class="meta">' + meta + '</div>' : '') +
+    '<div class="price">' + money(p.price) + '</div></div></button>';
+}).join("");
+
+/* ===== 商品詳細 ===== */
+var dlg = $("detail"), savedY = 0, skipPop = 0;
+function lock(on){
+  if(on){ savedY = window.pageYOffset; document.body.style.position = "fixed"; document.body.style.top = -savedY + "px"; document.body.style.left = "0"; document.body.style.right = "0"; }
+  else { document.body.style.position = ""; document.body.style.top = ""; document.body.style.left = ""; document.body.style.right = ""; window.scrollTo(0, savedY); }
+}
+function openDetail(i){
+  var p = ITEMS[i]; if(!p || !dlg.hidden) return;
+  dlg.querySelector(".d-pics").innerHTML = p.pics.map(function(src, j){
+    return '<img src="' + esc(src) + '" alt="' + esc(p.name) + ' 第 ' + (j + 1) + ' 張" decoding="async">'; }).join("");
+  var rows = [["型號", p.code], ["顏色", p.color], ["尺寸", p.size], ["說明", p.note]].filter(function(r){ return r[1]; });
+  dlg.querySelector(".d-info").innerHTML =
+    '<div class="d-brand">UNFILO</div><h2>' + esc(p.name) + '</h2><div class="d-price">' + money(p.price) + '</div>' +
+    '<dl>' + rows.map(function(r){ return '<div class="row"><dt>' + r[0] + '</dt><dd>' + esc(r[1]) + '</dd></div>'; }).join("") + '</dl>' +
+    '<p class="d-note">歡迎到專櫃試穿，實際顏色以現場為準。</p>' +
+    '<button class="d-back" type="button">← 回到商品列表</button>';
+  dlg.hidden = false; dlg.scrollTop = 0; lock(true);
+  try{ history.pushState({detail:true}, ""); }catch(e){}       // 手機「返回」只會關掉這個畫面
+}
+function closeDetail(){ if(dlg.hidden) return; dlg.hidden = true; lock(false); }
+function requestClose(){                                       // 先馬上關掉，再把「上一頁」紀錄退掉
+  if(dlg.hidden) return;
+  closeDetail();
+  if(history.state && history.state.detail){ skipPop++; history.back(); setTimeout(function(){ skipPop = 0; }, 1500); }
+}
+window.addEventListener("popstate", function(){ if(skipPop){ skipPop--; return; } closeDetail(); });
+if("scrollRestoration" in history) history.scrollRestoration = "manual";
+
+$("grid").addEventListener("click", function(e){
+  var c = e.target.closest ? e.target.closest(".card") : null; if(c) openDetail(+c.getAttribute("data-i")); });
+dlg.addEventListener("click", function(e){
+  var t = e.target;
+  if(t.closest && (t.closest(".d-close") || t.closest(".d-back"))) requestClose(); });
+document.addEventListener("keydown", function(e){ if(!dlg.hidden && e.key === "Escape") requestClose(); });
+</script>
+</body>
+</html>
