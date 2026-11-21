@@ -47,6 +47,14 @@
   .add input{display:none}
   .add b{font-size:28px;line-height:1}
   .hint{font-size:14px;color:var(--muted);margin-top:8px}
+  /* 折扣區 */
+  .salebox{margin-top:16px;padding:12px 14px;border:1px solid #e6c9a8;border-radius:8px;background:#fbf4ea}
+  .chk{display:flex;align-items:center;margin:0;font-size:18px;cursor:pointer}
+  .chk input{width:26px;height:26px;margin:0 10px 0 0;flex:0 0 auto}
+  .salebox small{display:block;font-weight:400;font-size:14px;color:var(--muted);margin-top:4px}
+  .quick{margin-top:8px}
+  .quick button{display:inline-block;margin:0 6px 6px 0;padding:9px 14px;font-size:17px;background:#fff;border:1px solid #cfc4b4;color:var(--ink)}
+  form.saving .salebox{pointer-events:none;opacity:.6}
 
   .item{padding:14px 0;border-top:1px solid var(--line)}
   .item:first-child{border-top:0}
@@ -111,6 +119,19 @@
     </div>
     <p class="hint">選「新品」的話，7 天後網站上會自動拿掉這個標籤（其他標籤不會）。</p>
 
+    <div class="salebox">
+      <label class="chk"><input type="checkbox" id="sale">放進折扣區</label>
+      <small>23區的衣服會在「23區折扣區」，SELECT 的衣服會在「選品折扣區」</small>
+      <div id="saleWrap" hidden>
+        <label for="salePrice">折扣後價格 <small style="display:inline">（客人會看到原價劃掉，旁邊是這個價格）</small></label>
+        <input id="salePrice" inputmode="numeric" placeholder="例如：2624">
+        <div class="quick" id="quick">
+          <button type="button" data-off="0.9">9折</button><button type="button" data-off="0.8">8折</button><button type="button" data-off="0.7">7折</button><button type="button" data-off="0.6">6折</button><button type="button" data-off="0.5">5折</button>
+        </div>
+        <p class="hint" style="margin-top:2px">先填好上面的「價格」，再按幾折，會自動算好。</p>
+      </div>
+    </div>
+
     <label for="note">備註 <small>（客人點開衣服時會看到，例如材質、搭配建議）</small></label>
     <textarea id="note" placeholder="例如：羊毛混紡，保暖不刺癢；可搭配直筒褲"></textarea>
 
@@ -132,7 +153,7 @@ const CATS = ["外套","上衣","針織","褲子","襯衫","背心"];
 const MAX = 15;
 const URL_ = (window.SHOP||{}).SCRIPT_URL || "";
 const $ = id => document.getElementById(id);
-const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const driveId = l => { const m=(l||"").match(/\/d\/([\w-]{20,})/)||(l||"").match(/[?&]id=([\w-]{20,})/); return m?m[1]:""; };
 const thumb = (l,w=300) => driveId(l) ? `https://drive.google.com/thumbnail?id=${driveId(l)}&sz=w${w}` : "";
 const imgsOf = p => p.imgs || (p.img ? [p.img] : []);
@@ -187,9 +208,9 @@ let pwBad = false;                                           // 密碼錯了就�
 async function call(payload){
   if(!URL_) throw new Error("還沒設定 SCRIPT_URL（config.js）");
   if(!$("pw").value) throw new Error("請先在最上面輸入管理密碼");
-  const ctrl = new AbortController(), timer = setTimeout(()=>ctrl.abort(), 90000);
+  const ctrl = window.AbortController ? new AbortController() : null, timer = setTimeout(()=>{ if(ctrl) ctrl.abort(); }, 90000);   // 舊手機沒有 AbortController 也能用
   let res;
-  try{ res = await fetch(URL_, {method:"POST", body:JSON.stringify({...payload, password:$("pw").value}), signal:ctrl.signal}); }
+  try{ res = await fetch(URL_, {method:"POST", body:JSON.stringify(Object.assign({}, payload, {password:$("pw").value})), signal:ctrl ? ctrl.signal : undefined}); }
   catch(err){ throw new Error(err.name==="AbortError" ? "等太久沒有回應，請再試一次" : "網路連線失敗，請確認網路後再試一次"); }
   finally{ clearTimeout(timer); }
   let data;
@@ -325,12 +346,24 @@ let editing = null, items = [], uploading = false;
 addEventListener("beforeunload", e=>{ if(uploading){ e.preventDefault(); e.returnValue = ""; } });
 document.addEventListener("error", e=>{ if(e.target.tagName==="IMG") e.target.style.visibility="hidden"; }, true);
 
+/* ===== 折扣區 ===== */
+const digits = v => String(v||"").replace(/[^\d]/g,"").slice(0,9);
+function syncSale(){ $("saleWrap").hidden = !$("sale").checked; }
+$("sale").addEventListener("change", ()=>{ syncSale(); if($("sale").checked && !$("salePrice").value) $("salePrice").focus(); });
+$("quick").addEventListener("click", e=>{
+  const b = e.target.closest("[data-off]"); if(!b) return;
+  const op = +digits($("price").value);
+  if(!op){ say("請先在上面填「價格」，再按幾折"); $("price").focus(); return; }
+  $("salePrice").value = String(Math.round(op * +b.getAttribute("data-off")));
+  say("", true);
+});
+
 function newReq(){ return "r" + Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
 function resetForm(saved){
   if(!saved) discard(shots);
   session++; reqId = newReq();
   editing = null; shots = [];
-  $("form").reset(); fillCats(CATS[0]); $("brand").value = "23區";
+  $("form").reset(); fillCats(CATS[0]); $("brand").value = "23區"; syncSale();
   $("form").classList.remove("editing");
   $("formTitle").textContent = "新增衣服";
   $("send").textContent = "上傳";
@@ -347,6 +380,7 @@ function startEdit(p){
   $("name").value = p.name; $("color").value = p.color||""; $("size").value = p.size||"";
   $("price").value = String(p.price||"").replace(/[^\d]/g,""); $("tag").value = p.tag||"";   // 過期的「新品」小幫手已經送空白
   $("note").value = p.note||"";
+  $("sale").checked = !!p.sale; $("salePrice").value = p.sale && p.salePrice ? String(p.salePrice) : ""; syncSale();
   fillCats(p.cat || CATS[0]);
   $("form").classList.add("editing");
   $("formTitle").textContent = "編輯：" + p.name;
@@ -364,19 +398,25 @@ $("form").addEventListener("submit", async e=>{
   const cat = pickedCat();
   if(!cat){ say("請輸入新類別的名稱"); $("newCat").focus(); return; }
   if(processing > 0){ say("照片還在處理中，請等照片都出現後再按一次", true); return; }
+  if($("sale").checked){                                            // 折扣價要比原價低
+    const op = +digits($("price").value), sp = +digits($("salePrice").value);
+    if(op && !sp){ say("請填「折扣後價格」，或按下面的「8折」等按鈕"); $("salePrice").focus(); return; }
+    if(op && sp >= op){ say("折扣後價格要比原價低，請再確認一次"); $("salePrice").focus(); return; }
+  }
   if(!shots.length && !confirm("沒有照片，確定要儲存嗎？")) return;
   /* 按下去的那一刻就把所有內容記下來，儲存途中畫面怎麼變都不影響 */
   const target = editing, list = shots.slice();
   const data = { name:$("name").value.trim(), brand:$("brand").value, cat, color:$("color").value.trim(), size:$("size").value.trim(),
-    price:$("price").value.trim(), tag:$("tag").value, note:$("note").value.trim() };
+    price:$("price").value.trim(), tag:$("tag").value, note:$("note").value.trim(),
+    sale:$("sale").checked, salePrice:$("sale").checked ? digits($("salePrice").value) : "" };
   savingList = list;
   saving = true; $("send").disabled = true; $("form").classList.add("saving"); uploading = true;
   try{
     await allUploaded(list);
     say("儲存資料中…", true);
     data.imgs = list.map(s=>s.link);
-    if(target) await call({action:"update", id:target.id, row:target.row, oldName:target.name, ...data});
-    else await call({action:"add", reqId, ...data});             // 同一個編號重送也只會新增一次
+    if(target) await call(Object.assign({action:"update", id:target.id, row:target.row, oldName:target.name}, data));
+    else await call(Object.assign({action:"add", reqId:reqId}, data));             // 同一個編號重送也只會新增一次
     rememberCat(cat);
     resetForm(true);
     say(target ? "✓ 已儲存修改！" : "✓ 上傳成功！", true);
@@ -402,7 +442,7 @@ async function loadList(){
       <div class="item ${p.show?"":"off"}">
         <div class="top">
           ${im.length?`<img src="${thumb(im[0])}" alt="" referrerpolicy="no-referrer" loading="lazy">`:`<div class="noimg"></div>`}
-          <div class="t"><b>${esc(p.name)}</b><span>${esc([p.brand||"23區",p.cat,p.price&&("NT$ "+p.price),im.length&&(im.length+" 張照片")].filter(Boolean).join("｜"))}${p.show?"":"｜已下架"}</span></div>
+          <div class="t"><b>${esc(p.name)}</b><span>${esc([p.brand||"23區",p.cat,p.price&&("NT$ "+p.price),p.sale&&("折扣區"+(p.salePrice?" NT$ "+p.salePrice:"")),im.length&&(im.length+" 張照片")].filter(Boolean).join("｜"))}${p.show?"":"｜已下架"}</span></div>
         </div>
         ${p.note?`<div class="note">備註：${esc(p.note)}</div>`:""}
         <div class="acts">
