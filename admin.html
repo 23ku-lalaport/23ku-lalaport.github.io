@@ -155,7 +155,7 @@ const URL_ = (window.SHOP||{}).SCRIPT_URL || "";
 const $ = id => document.getElementById(id);
 const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const driveId = l => { const m=(l||"").match(/\/d\/([\w-]{20,})/)||(l||"").match(/[?&]id=([\w-]{20,})/); return m?m[1]:""; };
-const thumb = (l,w=300) => driveId(l) ? `https://drive.google.com/thumbnail?id=${driveId(l)}&sz=w${w}` : "";
+const thumb = (l,w=300) => driveId(l) ? `https://lh3.googleusercontent.com/d/${driveId(l)}=w${w}` : "";   // 有登入 Google 的手機也能直接看到
 const imgsOf = p => p.imgs || (p.img ? [p.img] : []);
 
 /* ---------- 類別：固定的 + 已經用過的 + 自己新增的 ---------- */
@@ -344,7 +344,12 @@ $("file").addEventListener("change", async e=>{
 let editing = null, items = [], uploading = false;
 /* 上傳中不小心關掉或離開頁面，會先跳出提醒 */
 addEventListener("beforeunload", e=>{ if(uploading){ e.preventDefault(); e.returnValue = ""; } });
-document.addEventListener("error", e=>{ if(e.target.tagName==="IMG") e.target.style.visibility="hidden"; }, true);
+document.addEventListener("error", e=>{
+  const img = e.target; if(img.tagName!=="IMG") return;
+  const m = img.src.match(/googleusercontent\.com\/d\/([\w-]+)=w(\d+)/);           // 讀不到就換 Drive 縮圖再試一次
+  if(m && !img.dataset.alt){ img.dataset.alt = 1; img.src = `https://drive.google.com/thumbnail?id=${m[1]}&sz=w${m[2]}`; }
+  else img.style.visibility = "hidden";
+}, true);
 
 /* ===== 折扣區 ===== */
 const digits = v => String(v||"").replace(/[^\d]/g,"").slice(0,9);
